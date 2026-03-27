@@ -19,22 +19,10 @@
         <div class="container">
           <h3 class="section-title">最新文章</h3>
           <div class="posts-grid">
-            <article class="post-card">
+            <article class="post-card" v-for="item in posts" :key="item.id">
               <div class="post-image"></div>
-              <h4>Vue.js 最佳实践</h4>
-              <p>深入探讨Vue.js开发中的最佳实践和技巧。</p>
-              <a href="#" class="read-more">阅读更多</a>
-            </article>
-            <article class="post-card">
-              <div class="post-image"></div>
-              <h4>现代CSS技巧</h4>
-              <p>掌握最新的CSS特性，提升你的前端设计水平。</p>
-              <a href="#" class="read-more">阅读更多</a>
-            </article>
-            <article class="post-card">
-              <div class="post-image"></div>
-              <h4>人工智能的未来</h4>
-              <p>探讨AI技术的发展趋势及其对我们生活的影响。</p>
+              <h4>{{ item.title }}</h4>
+              <p>{{ item.desc }}</p>
               <a href="#" class="read-more">阅读更多</a>
             </article>
           </div>
@@ -71,6 +59,27 @@ export default {
   name: 'HomePage',
   components: {
     HeaderComponent
+  },
+  data() {
+    return {
+      posts: [
+        {
+          id: 1,
+          title: 'Vue.js 最佳实践',
+          desc: '深入探讨Vue.js开发中的最佳实践和技巧。'
+        },
+        {
+          id: 2,
+          title: '现代CSS技巧',
+          desc: '掌握最新的CSS特性，提升你的前端设计水平。'
+        },
+        {
+          id: 3,
+          title: '人工智能的未来',
+          desc: '探讨AI技术的发展趋势及其对我们生活的影响。'
+        }
+      ]
+    }
   },
   methods: {
     goTextHomepage(){

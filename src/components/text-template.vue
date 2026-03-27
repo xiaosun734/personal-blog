@@ -5,11 +5,11 @@
     <main class="content">
       <article class="article">
         <header class="article-header">
-          <h1 class="article-title">Vue 3 实战：组合式 API 进阶</h1>
+          <h1 class="article-title">{{ article.title }}</h1>
           <div class="article-meta">
-            <span class="author">作者：Sunn</span>
-            <span class="date">发布日期：2026-03-20</span>
-            <span class="category">分类：前端</span>
+            <span class="author">作者：{{ article.author }}</span>
+            <span class="date">发布日期：{{ article.date }}</span>
+            <span class="category">分类：{{ article.category }}</span>
           </div>
         </header>
         
@@ -102,6 +102,12 @@ export default {
   name: 'TextTemplate',
   components: {
     HeaderComponent
+  },
+  props: {
+    article: {
+      type: Object,
+      default: () => ({})
+    }
   }
 }
 </script>
