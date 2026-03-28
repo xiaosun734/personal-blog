@@ -20,6 +20,17 @@
           </li>
         </ul>
       </section>
+
+      <section class="categories">
+        <h2>文章分类</h2>
+        <div class="category-list">
+          <div class="category-item" v-for="category in categories" :key="category.id">
+            <h3>{{ category.name }}</h3>
+            <p>{{ category.description }}</p>
+            <span class="category-count">{{ category.count }} 篇文章</span>
+          </div>
+        </div>
+      </section>
     </main>
   </div>
 </template>
@@ -38,6 +49,12 @@ export default {
         { id: 1, title: 'Vue 3 实战：组合式 API 进阶', desc: '从响应式、生命周期和组件拆分说起', date: '2026-03-20', category: '前端', link: '#' },
         { id: 2, title: 'Node.js 性能优化方案', desc: '高并发下的事件循环与资源控制', date: '2026-03-18', category: '后端', link: '#' },
         { id: 3, title: '写给新人程序员的 10 条习惯', desc: '代码、沟通、测试与持续学习', date: '2026-03-15', category: '成长', link: '#' },
+      ],
+      categories: [
+        { id: 1, name: '前端', description: '前端开发技术、框架与工具', count: 0 },
+        { id: 2, name: '后端', description: '后端开发技术、架构与性能优化', count: 0 },
+        { id: 3, name: '成长', description: '程序员职业发展、学习方法与思维', count: 0 },
+        { id: 4, name: '生活', description: '技术之外的生活分享与思考', count: 0 },
       ],
     }
   },
@@ -180,6 +197,61 @@ export default {
   color: #7a8da5;
 }
 
+.categories {
+  margin-top: 40px;
+  padding: 0;
+  background: transparent;
+  border-radius: 0;
+  box-shadow: none;
+}
+
+.categories h2 {
+  margin: 0 0 20px;
+  font-size: 1.8rem;
+  color: #213045;
+  border-bottom: 2px solid #d9e5f3;
+  padding-bottom: 10px;
+}
+
+.category-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 20px;
+}
+
+.category-item {
+  padding: 20px;
+  background: #f8fafc;
+  border-radius: 8px;
+  border: 1px solid #e2e8f0;
+  transition: all 0.3s ease;
+}
+
+.category-item:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.08);
+  /* border-color: #4a90e2; */
+}
+
+.category-item h3 {
+  margin: 0 0 8px;
+  font-size: 1.1rem;
+  color: #172238;
+}
+
+.category-item p {
+  margin: 0 0 12px;
+  color: #64748b;
+  font-size: 0.9rem;
+  line-height: 1.4;
+}
+
+.category-count {
+  font-size: 0.8rem;
+  color: #7a8da5;
+  font-weight: 500;
+}
+
 @media (max-width: 768px) {
   .hero {
     padding: 26px 18px;
@@ -191,6 +263,10 @@ export default {
 
   .content {
     padding: calc(72px + 16px) 0 24px;
+  }
+
+  .category-list {
+    grid-template-columns: 1fr;
   }
 }
 </style>
