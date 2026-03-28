@@ -19,7 +19,7 @@
         <div class="container">
           <h3 class="section-title">最新文章</h3>
           <div class="posts-grid">
-            <article class="post-card" v-for="item in posts" :key="item.id">
+            <article class="post-card" v-for="(item,index) in posts" :key="index" @click="goToArticle(item.id)" style="cursor: pointer;">
               <div class="post-image"></div>
               <h4>{{ item.title }}</h4>
               <p>{{ item.desc }}</p>
@@ -84,6 +84,9 @@ export default {
   methods: {
     goTextHomepage(){
       this.$router.push('/text-homepage')
+    },
+    goToArticle(id){
+      this.$router.push(`/article/${id}`)
     }
   }
 }
