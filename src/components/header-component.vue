@@ -34,12 +34,12 @@ export default {
       const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
       const scrollDelta = scrollTop - this.lastScrollTop;
       
-      // 如果向下滚动超过50px，隐藏header
-      if (scrollDelta > 25 && scrollTop > 100) {
+      // 如果向下滚动超过25px，隐藏header
+      if (scrollTop > 100 && scrollDelta > 0) {
         this.headerHidden = true;
       } 
       // 如果向上滚动或回到顶部，显示header
-      else if (scrollDelta < -10 || scrollTop < 100) {
+      else if (scrollDelta < 0 || scrollTop < 100) {
         this.headerHidden = false;
       }
       
