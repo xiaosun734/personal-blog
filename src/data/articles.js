@@ -136,67 +136,44 @@ export default {
   },
   {
     id: 4,
-    title: '摄影之旅：记录生活中的美好瞬间',
+    title: '我的舍友小马',
     author: 'Sunn',
-    desc: '用镜头捕捉生活中的精彩瞬间',
-    date: '2026-03-29',
+    desc: '小马的帅照',
+    date: '2026-03-30',
     category: '摄影',
     link: '#',
-    content: `<p>摄影是一种捕捉瞬间、记录生活的艺术。通过镜头，我们可以冻结时间，保存那些稍纵即逝的美好时刻。在这篇文章中，我将分享一些我最近拍摄的照片，以及我对摄影的一些感悟。</p>
+    content: `<p>小马是我的好朋友，我希望能通过照片记录他的日常生活，毕业以后看到照片还能回忆起他。</p>
           
-          <h2>自然风光</h2>
-          <p>大自然的美景总是让人心旷神怡。无论是雄伟的山脉、宁静的湖泊，还是绚烂的日落，都值得我们用相机记录下来。</p>
-          
+          <h2>高P小马</h2>
+          <p>小马的帅气人尽皆知</p>
+          <br>
           <div class="photo-gallery">
             <div class="photo-item">
-              <img src="https://neeko-copilot.bytedance.net/api/text2image?prompt=beautiful%20mountain%20landscape%20with%20lake%20and%20sunset&size=1024x768" alt="山景日落" />
-              <p class="photo-caption">山脉日落 - 大自然的壮丽景色</p>
-            </div>
+              <img src="https://picui.ogmua.cn/s1/2026/03/30/69c9d1bc56da6.webp" alt="自恋" width="300" height="400" />
+              <p class="photo-caption" style="opacity: 0.7">2025/7/10晚，小马自恋之夜</p>
+            </div><br>
             <div class="photo-item">
-              <img src="https://neeko-copilot.bytedance.net/api/text2image?prompt=peaceful%20forest%20with%20sunlight%20through%20trees&size=1024x768" alt="森林阳光" />
-              <p class="photo-caption">森林阳光 - 静谧的自然之美</p>
+              <img src="https://picui.ogmua.cn/s1/2026/03/30/69c9d4bea6804.webp" alt="伪素颜" width="300" height="400" />
+              <p class="photo-caption" style="opacity: 0.7">2025/1/5，伪素颜小马</p>
+            </div><br>
+            <div class="photo-item">
+              <img src="https://picui.ogmua.cn/s1/2026/03/30/69c9d66896363.webp" alt="小奶狗" width="300" height="450" />
+              <p class="photo-caption" style="opacity: 0.7">2025/4/4，小奶狗</p>
             </div>
           </div>
-          
-          <h2>城市街景</h2>
-          <p>城市是人类文明的结晶，充满了活力和故事。街头的行人、建筑的线条、夜晚的灯光，都是城市摄影的绝佳素材。</p>
-          
+          <br>
+          <h2>摆拍小马</h2>
+          <p>摆拍这一块./（摄影师当然是萧笋）</p>
+          <br>
           <div class="photo-gallery">
             <div class="photo-item">
-              <img src="https://neeko-copilot.bytedance.net/api/text2image?prompt=urban%20street%20photography%20with%20people%20walking&size=1024x768" alt="城市街景" />
-              <p class="photo-caption">城市街景 - 现代生活的缩影</p>
-            </div>
-            <div class="photo-item">
-              <img src="https://neeko-copilot.bytedance.net/api/text2image?prompt=city%20night%20lights%20skyline&size=1024x768" alt="城市夜景" />
-              <p class="photo-caption">城市夜景 - 夜晚的繁华与活力</p>
+              <img src="https://picui.ogmua.cn/s1/2026/03/30/69c9da9f99e6a.webp" alt="忠奸不分" width="400" height="300" />
+              <p class="photo-caption" style="opacity: 0.7">2025/3/8，忠奸不分</p>
             </div>
           </div>
+          <br>
           
-          <h2>人文纪实</h2>
-          <p>摄影不仅是记录美景，更是记录人性的美好。通过镜头，我们可以捕捉到人们的情感、生活的瞬间，这些都是最真实、最动人的画面。</p>
-          
-          <div class="photo-gallery">
-            <div class="photo-item">
-              <img src="https://neeko-copilot.bytedance.net/api/text2image?prompt=people%20enjoying%20time%20together%20in%20park&size=1024x768" alt="公园时光" />
-              <p class="photo-caption">公园时光 - 人们的欢乐时刻</p>
-            </div>
-            <div class="photo-item">
-              <img src="https://neeko-copilot.bytedance.net/api/text2image?prompt=street%20artist%20performing%20in%20city&size=1024x768" alt="街头艺人" />
-              <p class="photo-caption">街头艺人 - 城市中的艺术气息</p>
-            </div>
-          </div>
-          
-          <h2>摄影心得</h2>
-          <p>通过摄影，我学会了更加细致地观察生活，发现身边的美好。每一次按下快门，都是对生活的一次记录和思考。</p>
-          <p>摄影教会我：</p>
-          <ul>
-            <li>耐心等待最佳时机</li>
-            <li>从不同角度观察事物</li>
-            <li>注重光线和构图</li>
-            <li>用心感受被摄对象的故事</li>
-          </ul>
-          
-          <p>希望这些照片能带给你一些美的感受，也希望你能拿起相机，记录属于自己的美好瞬间。</p>`
+          <p>免责声明：以上照片已经过小马本人同意，禁止未经允许转载或使用</p>`
   }
 ];
 
