@@ -73,7 +73,13 @@ export default {
   data() {
     return {
       posts: [],
-      cardStates: {} // 为每个卡片维护独立的状态
+      cardStates: {}, // 为每个卡片维护独立的状态
+      // 为每个卡片定义不同的颜色方案
+      colorSchemes: [
+        { start: { r: 52, g: 152, b: 219 }, end: { r: 155, g: 89, b: 182 } }, // 蓝到紫
+        { start: { r: 46, g: 204, b: 113 }, end: { r: 52, g: 152, b: 219 } }, // 绿到蓝
+        { start: { r: 231, g: 76, b: 60 }, end: { r: 241, g: 196, b: 15 } }  // 红到黄
+      ]
     }
   },
   mounted() {
@@ -93,12 +99,16 @@ export default {
     getCardState(element) {
       const cardId = element.dataset.cardId;
       if (!this.cardStates[cardId]) {
+        // 获取当前卡片的颜色方案
+        const colorScheme = this.colorSchemes[parseInt(cardId) % this.colorSchemes.length];
         this.cardStates[cardId] = {
           animationId: null,
           currentRadius: 0,
           targetRadius: 0,
           mouseX: 0,
           mouseY: 0,
+          color: '#3498db',
+          colorScheme: colorScheme,
           isAnimating: false
         };
       }
@@ -111,7 +121,18 @@ export default {
       state.mouseX = event.clientX - rect.left;
       state.mouseY = event.clientY - rect.top;
       
-      // 无论是否在动画中，都更新渐变位置
+      // 计算鼠标在元素内的相对位置（0-1）
+      const relX = state.mouseX / rect.width;
+      const relY = state.mouseY / rect.height;
+      
+      // 根据位置和卡片的颜色方案生成渐变颜色
+      const scheme = state.colorScheme;
+      const r = Math.floor(scheme.start.r + (scheme.end.r - scheme.start.r) * (relX + relY) / 2);
+      const g = Math.floor(scheme.start.g + (scheme.end.g - scheme.start.g) * (relX + relY) / 2);
+      const b = Math.floor(scheme.start.b + (scheme.end.b - scheme.start.b) * (relX + relY) / 2);
+      state.color = `rgb(${r}, ${g}, ${b})`;
+      
+      // 无论是否在动画中，都更新渐变位置和颜色
       this.updateGradient(element, state);
     },
     handleMouseEnter(event) {
@@ -165,7 +186,7 @@ export default {
     },
     updateGradient(element, state) {
       if (state.currentRadius > 0) {
-        element.style.background = `radial-gradient(circle ${state.currentRadius}px at ${state.mouseX}px ${state.mouseY}px, #3498db, transparent), linear-gradient(45deg, #ecf0f1, #bdc3c7)`;
+        element.style.background = `radial-gradient(circle ${state.currentRadius}px at ${state.mouseX}px ${state.mouseY}px, ${state.color}, transparent), linear-gradient(45deg, #ecf0f1, #bdc3c7)`;
       } else {
         element.style.background = 'linear-gradient(45deg, #ecf0f1, #bdc3c7)';
       }
