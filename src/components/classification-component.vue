@@ -57,56 +57,63 @@ export default {
 
 <style scoped>
 .classification-container {
-  background-color: #f9f9f9;
-  border-radius: 8px;
+  background-color: #ffffff;
+  border-radius: 12px;
   padding: 20px;
-  margin-bottom: 30px;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+  border: 1px solid #e1e8ed;
+  width: 200px;
+  position: sticky;
+  top: 160px;
+  align-self: flex-start;
 }
 
 .classification-title {
   font-size: 18px;
-  font-weight: 600;
+  font-weight: 700;
   margin-bottom: 15px;
-  color: #333;
-  border-bottom: 1px solid #eaeaea;
+  color: #2c3e50;
+  border-bottom: 1px solid #e1e8ed;
   padding-bottom: 10px;
+  text-align: center;
 }
 
 .classification-list {
   display: flex;
-  flex-wrap: wrap;
+  flex-direction: column;
   gap: 10px;
 }
 
 .classification-item {
-  background-color: #fff;
-  border: 1px solid #eaeaea;
-  border-radius: 16px;
-  padding: 8px 16px;
+  background-color: #ffffff;
+  border: 1px solid #e1e8ed;
+  border-radius: 8px;
+  padding: 12px 16px;
   font-size: 14px;
   cursor: pointer;
   transition: all 0.3s ease;
   display: flex;
+  justify-content: space-between;
   align-items: center;
-  gap: 8px;
 }
 
 .classification-item:hover {
-  background-color: #f0f0f0;
-  transform: translateY(-2px);
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  background-color: #f8fafc;
+  transform: translateX(5px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  border-color: #3498db;
 }
 
 .category-name {
-  color: #333;
+  color: #2c3e50;
+  font-weight: 500;
 }
 
 .category-count {
-  background-color: #eaeaea;
-  color: #666;
-  border-radius: 10px;
-  padding: 2px 8px;
+  background-color: #e1e8ed;
+  color: #7f8c8d;
+  border-radius: 12px;
+  padding: 2px 10px;
   font-size: 12px;
   font-weight: 500;
 }
