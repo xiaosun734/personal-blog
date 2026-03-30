@@ -159,12 +159,12 @@ export default {
       
       const animate = () => {
         if (state.currentRadius < state.targetRadius) {
-          state.currentRadius += 5;
+          state.currentRadius += 10;
           if (state.currentRadius > state.targetRadius) {
             state.currentRadius = state.targetRadius;
           }
         } else if (state.currentRadius > state.targetRadius) {
-          state.currentRadius -= 5;
+          state.currentRadius -= 10;
           if (state.currentRadius < state.targetRadius) {
             state.currentRadius = state.targetRadius;
           }
