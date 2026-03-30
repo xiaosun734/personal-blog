@@ -6,6 +6,7 @@
 
 <script>
 import TextTemplate from '../components/text-template.vue'
+import articles from '../data/articles'
 
 export default {
   name: 'TextRead',
@@ -14,35 +15,7 @@ export default {
   },
   data() {
     return {
-      articles: [
-        {
-          id: 1,
-          title: 'Vue 3 实战：组合式 API 进阶',
-          author: 'Sunn',
-          desc: '从响应式、生命周期和组件拆分说起',
-          date: '2026-03-20',
-          category: '前端',
-          link: '#'
-        },
-        {
-          id: 2,
-          title: 'Node.js 性能优化方案',
-          author: 'Sunn',
-          desc: '高并发下的事件循环与资源控制',
-          date: '2026-03-18',
-          category: '后端',
-          link: '#'
-        },
-        {
-          id: 3,
-          title: '写给新人程序员的 10 条习惯',
-          author: 'Sunn',
-          desc: '代码、沟通、测试与持续学习',
-          date: '2026-03-15',
-          category: '成长',
-          link: '#'
-        }
-      ],
+      articles: articles,
       article: {}
     }
   },
