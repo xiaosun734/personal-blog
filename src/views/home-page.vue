@@ -55,6 +55,8 @@
 
 <script>
 import HeaderComponent from '../components/header-component.vue'
+import articles from '../data/articles'
+
 export default {
   name: 'HomePage',
   components: {
@@ -62,24 +64,15 @@ export default {
   },
   data() {
     return {
-      posts: [
-        {
-          id: 1,
-          title: 'Vue.js 最佳实践',
-          desc: '深入探讨Vue.js开发中的最佳实践和技巧。'
-        },
-        {
-          id: 2,
-          title: '现代CSS技巧',
-          desc: '掌握最新的CSS特性，提升你的前端设计水平。'
-        },
-        {
-          id: 3,
-          title: '人工智能的未来',
-          desc: '探讨AI技术的发展趋势及其对我们生活的影响。'
-        }
-      ]
+      posts: []
     }
+  },
+  mounted() {
+    // 对文章按id排序，取最后三篇（id最靠后的）
+    this.posts = articles
+      .sort((a, b) => a.id - b.id) // 按id升序排序
+      .slice(-3) // 取最后三篇
+      .reverse(); // 反转顺序，使最新的文章在前面
   },
   methods: {
     goTextHomepage(){

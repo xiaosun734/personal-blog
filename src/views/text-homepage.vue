@@ -46,7 +46,7 @@ export default {
   },
   data() {
     return {
-      articles: articles,
+      articles: [],
       categories: [
         { id: 1, name: '前端', description: '前端开发技术、框架与工具', count: 0 },
         { id: 2, name: '后端', description: '后端开发技术、架构与性能优化', count: 0 },
@@ -61,6 +61,11 @@ export default {
     this.categories.forEach(category => {
       category.count = this.articles.filter(article => article.category === category.name).length;
     });
+    
+    this.articles = articles
+      .sort((a, b) => a.id - b.id) // 按id升序排序
+      .slice(-4) // 取最后四篇
+      .reverse(); // 反转顺序，使最新的文章在前面
   }
 }
 </script>
