@@ -22,14 +22,7 @@
       </section>
 
       <section class="categories">
-        <h2>文章分类</h2>
-        <div class="category-list">
-          <div class="category-item" v-for="category in categories" :key="category.id">
-            <h3>{{ category.name }}</h3>
-            <p>{{ category.description }}</p>
-            <span class="category-count">{{ category.count }} 篇文章</span>
-          </div>
-        </div>
+        <ClassificationComponent />
       </section>
     </main>
   </div>
@@ -37,31 +30,21 @@
 
 <script>
 import HeaderComponent from '../components/header-component.vue'
+import ClassificationComponent from '../components/classification-component.vue'
 import articles from '../data/articles'
 
 export default {
   name: 'TextHomepage',
   components: {
     HeaderComponent,
+    ClassificationComponent
   },
   data() {
     return {
       articles: [],
-      categories: [
-        { id: 1, name: '前端', description: '前端开发技术、框架与工具', count: 0 },
-        { id: 2, name: '后端', description: '后端开发技术、架构与性能优化', count: 0 },
-        { id: 3, name: '成长', description: '程序员职业发展、学习方法与思维', count: 0 },
-        { id: 4, name: '摄影', description: '用镜头记录生活中的美好瞬间', count: 0 },
-        { id: 5, name: '生活', description: '技术之外的生活分享与思考', count: 0 },
-      ],
     }
   },
   mounted() {
-    // 计算每个分类的文章数量
-    this.categories.forEach(category => {
-      category.count = this.articles.filter(article => article.category === category.name).length;
-    });
-    
     this.articles = articles
       .sort((a, b) => a.id - b.id) // 按id升序排序
       .slice(-4) // 取最后四篇

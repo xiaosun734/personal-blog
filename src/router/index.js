@@ -4,6 +4,7 @@ import VueRouter from 'vue-router'
 import HomePage from '../views/home-page.vue'
 import TextHomePage from '../views/text-homepage.vue'
 import TextRead from '../views/text-read.vue'
+import ClassificationPage from '../views/classification-page.vue'
 
 Vue.use(VueRouter)
 
@@ -22,6 +23,12 @@ const routes = [
     path: '/article/:id',
     name: 'TextRead',
     component: TextRead,
+    props: true
+  },
+  {
+    path: '/classification/:category?',
+    name: 'ClassificationPage',
+    component: ClassificationPage,
     props: true
   }
 ]
