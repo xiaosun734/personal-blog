@@ -362,6 +362,14 @@ export default {
   flex-shrink: 0;
   box-shadow: 0 8px 30px rgba(52, 152, 219, 0.3);
   position: relative;
+  overflow: hidden;
+}
+
+.about-image-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 50%;
 }
 
 .about-image::before {
