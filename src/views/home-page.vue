@@ -20,7 +20,13 @@
           <h3 class="section-title">最新文章</h3>
           <div class="posts-grid">
             <article class="post-card" v-for="(item,index) in posts" :key="index" @click="goToArticle(item.id)" style="cursor: pointer;">
-              <div class="post-image"></div>
+              <div 
+                class="post-image" 
+                :data-card-id="index" 
+                @mousemove="handleMouseMove" 
+                @mouseenter="handleMouseEnter" 
+                @mouseleave="handleMouseLeave"
+              ></div>
               <h4>{{ item.title }}</h4>
               <p>{{ item.desc }}</p>
               <a href="#" class="read-more">阅读更多</a>
@@ -38,7 +44,9 @@
               <p>我是一名热爱技术的开发者，通过这个博客，我希望分享我的学习心得和技术见解。</p>
               <p>在这里，你会找到关于编程、设计、科技趋势的文章。让我们一起探索这个充满无限可能的数字世界。</p>
             </div>
-            <div class="about-image"></div>
+            <div class="about-image">
+              <img src="https://picui.ogmua.cn/s1/2026/03/30/69c9e32d3425c.webp" alt="关于我" class="about-image-img">
+            </div>
           </div>
         </div>
       </section>
@@ -64,7 +72,8 @@ export default {
   },
   data() {
     return {
-      posts: []
+      posts: [],
+      cardStates: {} // 为每个卡片维护独立的状态
     }
   },
   mounted() {
@@ -75,11 +84,91 @@ export default {
       .reverse(); // 反转顺序，使最新的文章在前面
   },
   methods: {
-    goTextHomepage(){
+    goTextHomepage() {
       this.$router.push('/text-homepage')
     },
-    goToArticle(id){
+    goToArticle(id) {
       this.$router.push(`/article/${id}`)
+    },
+    getCardState(element) {
+      const cardId = element.dataset.cardId;
+      if (!this.cardStates[cardId]) {
+        this.cardStates[cardId] = {
+          animationId: null,
+          currentRadius: 0,
+          targetRadius: 0,
+          mouseX: 0,
+          mouseY: 0,
+          isAnimating: false
+        };
+      }
+      return this.cardStates[cardId];
+    },
+    handleMouseMove(event) {
+      const element = event.currentTarget;
+      const rect = element.getBoundingClientRect();
+      const state = this.getCardState(element);
+      state.mouseX = event.clientX - rect.left;
+      state.mouseY = event.clientY - rect.top;
+      
+      // 无论是否在动画中，都更新渐变位置
+      this.updateGradient(element, state);
+    },
+    handleMouseEnter(event) {
+      const element = event.currentTarget;
+      const rect = element.getBoundingClientRect();
+      const state = this.getCardState(element);
+      state.mouseX = event.clientX - rect.left;
+      state.mouseY = event.clientY - rect.top;
+      state.currentRadius = 0;
+      state.targetRadius = 150;
+      state.isAnimating = true;
+      this.animateGradient(element, state);
+    },
+    handleMouseLeave(event) {
+      const element = event.currentTarget;
+      const state = this.getCardState(element);
+      state.targetRadius = 0;
+      this.animateGradient(element, state, true);
+    },
+    animateGradient(element, state, isLeaving = false) {
+      if (state.animationId) {
+        cancelAnimationFrame(state.animationId);
+      }
+      
+      const animate = () => {
+        if (state.currentRadius < state.targetRadius) {
+          state.currentRadius += 5;
+          if (state.currentRadius > state.targetRadius) {
+            state.currentRadius = state.targetRadius;
+          }
+        } else if (state.currentRadius > state.targetRadius) {
+          state.currentRadius -= 5;
+          if (state.currentRadius < state.targetRadius) {
+            state.currentRadius = state.targetRadius;
+          }
+        }
+        
+        this.updateGradient(element, state);
+        
+        if ((state.currentRadius < state.targetRadius || state.currentRadius > state.targetRadius)) {
+          state.animationId = requestAnimationFrame(animate);
+        } else {
+          state.animationId = null;
+          if (isLeaving) {
+            state.isAnimating = false;
+          }
+        }
+      };
+      
+      animate();
+    },
+    updateGradient(element, state) {
+      if (state.currentRadius > 0) {
+        element.style.background = `radial-gradient(circle ${state.currentRadius}px at ${state.mouseX}px ${state.mouseY}px, #3498db, transparent), linear-gradient(45deg, #ecf0f1, #bdc3c7)`;
+      } else {
+        element.style.background = 'linear-gradient(45deg, #ecf0f1, #bdc3c7)';
+      }
     }
   }
 }
