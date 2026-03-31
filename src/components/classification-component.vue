@@ -1,5 +1,5 @@
 <template>
-  <div class="classification-container">
+  <div class="classification-container" :style="{ transform: `translateY(${translateY}px)` }">
     <h2 class="classification-title">文章分类</h2>
     <div class="classification-list">
       <div 
@@ -22,11 +22,21 @@ export default {
   name: 'ClassificationComponent',
   data() {
     return {
-      categories: []
+      categories: [],
+      translateY: 0,
+      lastScrollTop: 0,
+      scrollTimeout: null
     };
   },
   mounted() {
     this.getCategories();
+    window.addEventListener('scroll', this.handleScroll);
+  },
+  beforeUnmount() {
+    window.removeEventListener('scroll', this.handleScroll);
+    if (this.scrollTimeout) {
+      clearTimeout(this.scrollTimeout);
+    }
   },
   methods: {
     getCategories() {
@@ -50,6 +60,25 @@ export default {
     navigateToCategory(categoryName) {
       // 跳转到分类页面
       this.$router.push(`/classification/${categoryName}`);
+    },
+    handleScroll() {
+      const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
+      const scrollDelta = scrollTop - this.lastScrollTop;
+      
+      // 计算新的位置，限制在-10px到10px之间
+      this.translateY = Math.max(Math.min(this.translateY + scrollDelta * 0.2, 20), -20);
+      
+      this.lastScrollTop = scrollTop;
+      
+      // 清除之前的定时器
+      if (this.scrollTimeout) {
+        clearTimeout(this.scrollTimeout);
+      }
+      
+      // 设置新的定时器，当滚动停止后恢复原位
+      this.scrollTimeout = setTimeout(() => {
+        this.translateY = 0;
+      }, 150);
     }
   }
 };
@@ -67,6 +96,7 @@ export default {
   right: 50px;
   top: 160px;
   z-index: 10;
+  transition: transform 0.3s ease-out;
 }
 
 .classification-title {
