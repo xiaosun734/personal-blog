@@ -5,6 +5,7 @@ import HomePage from '../views/home-page.vue'
 import TextHomePage from '../views/text-homepage.vue'
 import TextRead from '../views/text-read.vue'
 import ClassificationPage from '../views/classification-page.vue'
+import PersonalHomepage from '../views/personal-homepage.vue'
 
 Vue.use(VueRouter)
 
@@ -30,6 +31,11 @@ const routes = [
     name: 'ClassificationPage',
     component: ClassificationPage,
     props: true
+  },
+  {
+    path: '/personal',
+    name: 'PersonalHomepage',
+    component: PersonalHomepage
   }
 ]
 
