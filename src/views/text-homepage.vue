@@ -50,9 +50,7 @@ export default {
   },
   mounted() {
     this.articles = articles
-      .sort((a, b) => a.id - b.id) // 按id升序排序
-      .slice(-4) // 取最后四篇
-      .reverse(); // 反转顺序，使最新的文章在前面
+      .sort((a, b) => b.id - a.id); // 按id降序排序，使最新的文章在前面
   }
 }
 </script>
