@@ -1,17 +1,20 @@
 <template>
   <div class="text-read-container">
     <TextTemplate :article="article" />
+    <ClassificationComponent />
   </div>
 </template>
 
 <script>
 import TextTemplate from '../components/text-template.vue'
+import ClassificationComponent from '../components/classification-component.vue'
 import articles from '../data/articles'
 
 export default {
   name: 'TextRead',
   components: {
-    TextTemplate
+    TextTemplate,
+    ClassificationComponent
   },
   data() {
     return {
