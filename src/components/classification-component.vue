@@ -63,9 +63,10 @@ export default {
   box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
   border: 1px solid #e1e8ed;
   width: 200px;
-  position: sticky;
+  position: fixed;
+  right: 50px;
   top: 160px;
-  align-self: flex-start;
+  z-index: 10;
 }
 
 .classification-title {

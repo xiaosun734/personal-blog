@@ -3,10 +3,8 @@
     <HeaderComponent />
     
     <main class="content">
-      <div class="content-wrapper">
-        <div class="main-content">
-          <h1 class="page-title">{{ currentCategory || '所有分类' }}</h1>
-          <div class="article-list">
+      <h1 class="page-title">{{ currentCategory || '所有分类' }}</h1>
+      <div class="article-list">
       <div 
         v-for="article in filteredArticles" 
         :key="article.id"
@@ -24,14 +22,10 @@
       <div v-if="filteredArticles.length === 0" class="no-articles">
         该分类下暂无文章
       </div>
-          </div>
-        </div>
-        
-        <aside class="sidebar">
-          <ClassificationComponent />
-        </aside>
       </div>
     </main>
+    
+    <ClassificationComponent />
   </div>
 </template>
 
@@ -86,24 +80,9 @@ export default {
 }
 
 .content {
-  max-width: 1200px;
+  max-width: 800px;
   margin: 0 auto;
   padding: calc(120px + 30px) 20px 40px; /* 留出 header 空间，与header的容器padding一致 */
-}
-
-.content-wrapper {
-  display: flex;
-  gap: 30px;
-  align-items: flex-start;
-}
-
-.main-content {
-  flex: 1;
-}
-
-.sidebar {
-  width: 240px;
-  flex-shrink: 0;
 }
 
 .page-title {
@@ -180,18 +159,13 @@ export default {
 }
 
 @media (max-width: 992px) {
-  .content-wrapper {
-    flex-direction: column;
-  }
-  
-  .sidebar {
-    width: 100%;
-  }
-  
   .classification-container {
     position: relative;
-    top: 0;
+    right: auto;
+    top: auto;
     width: 100%;
+    margin: 20px auto;
+    max-width: 800px;
   }
   
   .classification-list {

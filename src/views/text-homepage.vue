@@ -3,32 +3,26 @@
     <HeaderComponent />
 
     <main class="content">
-      <div class="content-wrapper">
-        <div class="main-content">
-          <section class="hero">
-            <h1 class="hero-title">欢迎来到我的博客</h1>
-            <p>这里记录了我的前端、后端、生活思考与成长路线，持续更新。</p>
-          </section>
+      <section class="hero">
+        <h1 class="hero-title">欢迎来到我的博客</h1>
+        <p>这里记录了我的前端、后端、生活思考与成长路线，持续更新。</p>
+      </section>
 
-          <section class="articles">
-            <h2>全部文章</h2>
-            <ul class="article-list">
-              <li class="article-item" v-for="item in articles" :key="item.id">
-                <router-link :to="{ name: 'TextRead', params: { id: item.id } }">
-                  <h3>{{ item.title }}</h3>
-                  <p>{{ item.desc }}</p>
-                  <span class="meta">{{ item.date }} · {{ item.category }}</span>
-                </router-link>
-              </li>
-            </ul>
-          </section>
-        </div>
-        
-        <aside class="sidebar">
-          <ClassificationComponent />
-        </aside>
-      </div>
+      <section class="articles">
+        <h2>全部文章</h2>
+        <ul class="article-list">
+          <li class="article-item" v-for="item in articles" :key="item.id">
+            <router-link :to="{ name: 'TextRead', params: { id: item.id } }">
+              <h3>{{ item.title }}</h3>
+              <p>{{ item.desc }}</p>
+              <span class="meta">{{ item.date }} · {{ item.category }}</span>
+            </router-link>
+          </li>
+        </ul>
+      </section>
     </main>
+    
+    <ClassificationComponent />
   </div>
 </template>
 
@@ -63,24 +57,9 @@ export default {
 }
 
 .content {
-  width: min(1100px, 92vw);
+  width: min(1000px, 92vw);
   margin: 0 auto;
   padding: calc(120px + 30px) 0 40px; /* 留出 header 空间 */
-}
-
-.content-wrapper {
-  display: flex;
-  gap: 30px;
-  align-items: flex-start;
-}
-
-.main-content {
-  flex: 1;
-}
-
-.sidebar {
-  width: 240px;
-  flex-shrink: 0;
 }
 
 .hero {
@@ -262,18 +241,13 @@ export default {
 }
 
 @media (max-width: 992px) {
-  .content-wrapper {
-    flex-direction: column;
-  }
-  
-  .sidebar {
-    width: 100%;
-  }
-  
   .classification-container {
     position: relative;
-    top: 0;
+    right: auto;
+    top: auto;
     width: 100%;
+    margin: 20px auto;
+    max-width: 800px;
   }
   
   .classification-list {
