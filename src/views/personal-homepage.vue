@@ -6,7 +6,7 @@
       <section class="profile-section">
         <div class="profile-card">
           <div class="profile-avatar">
-            <img src="https://picui.ogmua.cn/s1/2026/03/30/69c9e32d3425c.webp" alt="个人头像" />
+            <img src="https://picui.ogmua.cn/s1/2026/04/01/69cd0873633dd.webp" alt="个人头像" />
           </div>
           <h1 class="profile-name">Sunn</h1>
           <p class="profile-desc">前端开发者 | 技术爱好者 | 生活记录者</p>

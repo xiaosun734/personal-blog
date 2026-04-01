@@ -45,7 +45,7 @@
               <p>在这里，你会找到关于编程、设计、科技趋势的文章。让我们一起探索这个充满无限可能的数字世界。</p>
             </div>
             <div class="about-image">
-              <img src="https://picui.ogmua.cn/s1/2026/03/30/69c9e32d3425c.webp" alt="关于我" class="about-image-img">
+              <img src="https://picui.ogmua.cn/s1/2026/04/01/69cd0873633dd.webp" alt="关于我" class="about-image-img">
             </div>
           </div>
         </div>
