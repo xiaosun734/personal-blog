@@ -10,7 +10,20 @@
         <div class="container">
           <h2 class="hero-title">欢迎来到我的个人博客</h2>
           <p class="hero-subtitle">探索代码、设计与创新的交汇点</p>
-          <button class="cta-button" @click="goTextHomepage">开始阅读</button>
+          <button 
+            class="cta-button" 
+            @click="handleCtaClick"
+            :style="ctaButtonStyle"
+          >
+            开始阅读
+          </button>
+          <button 
+            v-if="showSurrenderButton" 
+            class="surrender-button" 
+            @click="surrender"
+          >
+            投降
+          </button>
         </div>
       </section>
 
@@ -79,7 +92,12 @@ export default {
         { start: { r: 52, g: 152, b: 219 }, end: { r: 155, g: 89, b: 182 } }, // 蓝到紫
         { start: { r: 46, g: 204, b: 113 }, end: { r: 52, g: 152, b: 219 } }, // 绿到蓝
         { start: { r: 231, g: 76, b: 60 }, end: { r: 241, g: 196, b: 15 } }  // 红到黄
-      ]
+      ],
+      // 愚人节效果相关
+      ctaClickCount: 0,
+      showSurrenderButton: false,
+      ctaButtonStyle: {},
+      isAprilFoolsActive: true
     }
   },
   mounted() {
@@ -92,6 +110,53 @@ export default {
   methods: {
     goTextHomepage() {
       this.$router.push('/text-homepage')
+    },
+    handleCtaClick() {
+      if (this.isAprilFoolsActive) {
+        this.ctaClickCount++;
+        
+        if (this.ctaClickCount >= 3) {
+          this.showSurrenderButton = true;
+        }
+        // 无论点击多少次，只要没投降，就继续移动按钮
+        this.moveCtaButton();
+      } else {
+        this.goTextHomepage();
+      }
+    },
+    moveCtaButton() {
+      // 确保按钮在可视范围内
+      const buttonWidth = 150; // 按钮大致宽度
+      const buttonHeight = 50; // 按钮大致高度
+      
+      // 获取视窗尺寸
+      const windowWidth = window.innerWidth;
+      const windowHeight = window.innerHeight;
+      
+      // 计算随机位置（确保按钮完全在视窗内）
+      const maxLeft = windowWidth - buttonWidth - 40; // 减去边距
+      const maxTop = windowHeight - buttonHeight - 200; // 减去头部和边距
+      
+      const randomLeft = Math.max(20, Math.floor(Math.random() * maxLeft));
+      const randomTop = Math.max(160, Math.floor(Math.random() * maxTop)); // 确保在头部下方
+      
+      // 更新按钮样式
+      this.ctaButtonStyle = {
+        position: 'fixed',
+        left: `${randomLeft}px`,
+        top: `${randomTop}px`,
+        zIndex: '1000', // 确保在最上层
+        transition: 'all 0.3s ease'
+      };
+    },
+    surrender() {
+      // 投降后恢复正常状态
+      this.isAprilFoolsActive = false;
+      this.showSurrenderButton = false;
+      this.ctaButtonStyle = {
+        position: 'static',
+        zIndex: 'auto'
+      };
     },
     goToArticle(id) {
       this.$router.push(`/article/${id}`)
@@ -276,6 +341,25 @@ export default {
   transform: translateY(-2px);
   box-shadow: 0 8px 25px rgba(52, 152, 219, 0.4);
   background: linear-gradient(45deg, #2980b9, #21618c);
+}
+
+.surrender-button {
+  background: linear-gradient(45deg, #e74c3c, #c0392b);
+  color: white;
+  border: none;
+  padding: 15px 30px;
+  font-size: 1.1rem;
+  border-radius: 25px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 15px rgba(231, 76, 60, 0.3);
+  margin-top: 20px;
+}
+
+.surrender-button:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 25px rgba(231, 76, 60, 0.4);
+  background: linear-gradient(45deg, #c0392b, #a93226);
 }
 
 /* 最新文章 */
