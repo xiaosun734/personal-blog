@@ -7,7 +7,6 @@
           <router-link to="/">首页</router-link>
           <router-link to="/personal">关于</router-link>
           <router-link to="/text-homepage">博客</router-link>
-          <router-link to="/contact">联系</router-link>
         </nav>
       </div>
     </header>
