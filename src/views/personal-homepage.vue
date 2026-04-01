@@ -26,8 +26,13 @@
             <h3>GitHub</h3>
             <p><a href="https://github.com/xiaosun734" target="_blank">github.com/xiaosun734</a></p>
           </div>
-          <div class="contact-card">
-            <div class="contact-icon">🐦</div>
+          <div 
+            class="contact-card" 
+            @mouseenter="showQRCode('qq')"
+            @mousemove="moveQRCode"
+            @mouseleave="hideQRCode"
+          >
+            <div class="contact-icon">🐧</div>
             <h3>QQ</h3>
             <p>990853641</p>
           </div>
@@ -35,6 +40,18 @@
             <div class="contact-icon">📱</div>
             <h3>电话(微信同号)</h3>
             <p>17380552618</p>
+          </div>
+        </div>
+        
+        <!-- 二维码显示元素 -->
+        <div 
+          v-if="showQR" 
+          class="qr-code-container"
+          :style="{ left: qrPosition.x + 'px', top: qrPosition.y + 'px' }"
+        >
+          <div class="qr-code">
+            <img :src="qrCodeSrc" alt="二维码" />
+            <p>{{ qrCodeTitle }}</p>
           </div>
         </div>
       </section>
@@ -64,6 +81,10 @@ export default {
   },
   data() {
     return {
+      showQR: false,
+      qrPosition: { x: 0, y: 0 },
+      qrCodeSrc: '',
+      qrCodeTitle: '',
       friendLinks: [
         {
           name: 'Vue.js',
@@ -97,6 +118,26 @@ export default {
         }
       ]
     };
+  },
+  methods: {
+    showQRCode(type) {
+      this.showQR = true;
+      // 这里使用示例二维码图片，实际项目中应该使用真实的二维码
+      switch(type) {
+        case 'qq':
+          this.qrCodeSrc = 'https://picui.ogmua.cn/s1/2026/04/01/69cd0096d6933.webp';
+          this.qrCodeTitle = 'QQ二维码';
+          break;
+      }
+    },
+    hideQRCode() {
+      this.showQR = false;
+    },
+    moveQRCode(event) {
+      // 调整二维码位置，使其在鼠标右下方
+      this.qrPosition.x = event.clientX + 10;
+      this.qrPosition.y = event.clientY + 10;
+    }
   }
 };
 </script>
@@ -221,6 +262,35 @@ export default {
 .contact-card a:hover {
   color: #2980b9;
   text-decoration: underline;
+}
+
+.qr-code-container {
+  position: fixed;
+  z-index: 1000;
+  pointer-events: none;
+}
+
+.qr-code {
+  background: #ffffff;
+  border-radius: 8px;
+  padding: 10px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  border: 1px solid #e1e8ed;
+  text-align: center;
+}
+
+.qr-code img {
+  width: 150px;
+  height: 150px;
+  display: block;
+  margin-bottom: 8px;
+}
+
+.qr-code p {
+  font-size: 14px;
+  color: #2c3e50;
+  margin: 0;
+  font-weight: 500;
 }
 
 .links-section {
