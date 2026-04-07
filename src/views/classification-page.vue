@@ -1,5 +1,6 @@
 <template>
   <div class="classification-page">
+    <BackButton />
     <HeaderComponent />
     
     <main class="content">
@@ -32,13 +33,15 @@
 <script>
 import articles from '../data/articles.js';
 import ClassificationComponent from '../components/classification-component.vue';
+import BackButton from '../components/back-button.vue'
 import HeaderComponent from '../components/header-component.vue';
 
 export default {
   name: 'ClassificationPage',
   components: {
     ClassificationComponent,
-    HeaderComponent
+    HeaderComponent,
+    BackButton
   },
   data() {
     return {

@@ -66,7 +66,7 @@ export default {
       const scrollDelta = scrollTop - this.lastScrollTop;
       
       // 计算新的位置，限制在-10px到10px之间
-      this.translateY = Math.max(Math.min(this.translateY + scrollDelta * 0.2, 20), -20);
+      this.translateY = Math.max(Math.min(this.translateY + scrollDelta * 0.2, 10), -10);
       
       this.lastScrollTop = scrollTop;
       

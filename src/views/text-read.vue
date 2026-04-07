@@ -1,5 +1,6 @@
 <template>
   <div class="text-read-container">
+    <BackButton />
     <TextTemplate :article="article" />
     <ClassificationComponent />
   </div>
@@ -8,13 +9,15 @@
 <script>
 import TextTemplate from '../components/text-template.vue'
 import ClassificationComponent from '../components/classification-component.vue'
+import BackButton from '../components/back-button.vue'
 import articles from '../data/articles'
 
 export default {
   name: 'TextRead',
   components: {
     TextTemplate,
-    ClassificationComponent
+    ClassificationComponent,
+    BackButton
   },
   data() {
     return {

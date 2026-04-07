@@ -1,5 +1,6 @@
 <template>
   <div class="personal-homepage">
+    <BackButton />
     <HeaderComponent />
     
     <main class="content">
@@ -73,11 +74,13 @@
 
 <script>
 import HeaderComponent from '../components/header-component.vue';
+import BackButton from '../components/back-button.vue'
 
 export default {
   name: 'PersonalHomepage',
   components: {
-    HeaderComponent
+    HeaderComponent,
+    BackButton
   },
   data() {
     return {

@@ -1,5 +1,6 @@
 <template>
   <div class="text-homepage">
+    <BackButton />
     <HeaderComponent />
 
     <main class="content">
@@ -29,13 +30,15 @@
 <script>
 import HeaderComponent from '../components/header-component.vue'
 import ClassificationComponent from '../components/classification-component.vue'
+import BackButton from '../components/back-button.vue'
 import articles from '../data/articles'
 
 export default {
   name: 'TextHomepage',
   components: {
     HeaderComponent,
-    ClassificationComponent
+    ClassificationComponent,
+    BackButton,
   },
   data() {
     return {
