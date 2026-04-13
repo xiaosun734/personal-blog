@@ -16,33 +16,10 @@
 <script>
 export default {
   name: 'HeaderComponent',
-  data() {
-    return {
-      lastScrollTop: 0,
-      headerHidden: false
-    }
-  },
-  mounted() {
-    window.addEventListener('scroll', this.handleScroll);
-  },
-  beforeUnmount() {
-    window.removeEventListener('scroll', this.handleScroll);
-  },
-  methods: {
-    handleScroll() {
-      const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
-      const scrollDelta = scrollTop - this.lastScrollTop;
-      
-      // 如果向下滚动超过25px，隐藏header
-      if (scrollTop > 100 && scrollDelta > 0) {
-        this.headerHidden = true;
-      } 
-      // 如果向上滚动或回到顶部，显示header
-      else if (scrollDelta < 0 || scrollTop < 100) {
-        this.headerHidden = false;
-      }
-      
-      this.lastScrollTop = scrollTop;
+  props: {
+    headerHidden: {
+      type: Boolean,
+      default: false
     }
   }
 }

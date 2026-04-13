@@ -51,6 +51,15 @@
   </div>
 </template>
 
+// 放在 main.js 最顶部，早于任何 fullpage 初始化
+if (window.location.hash === '#/' || window.location.hash.startsWith('#/')) {
+    // 去掉 #/，但保留后面路径给 Vue Router 使用
+    const path = window.location.hash.slice(2); // 例如 '/home'
+    window.location.replace(window.location.pathname + (path ? '#/' + path : ''));
+    // 或者简单粗暴地清空：
+    // window.location.hash = '';
+}
+
 <script>
 import HeaderComponent from '../components/header-component.vue'
 import articles from '../data/articles'
@@ -84,11 +93,18 @@ export default {
       if (!this.fullpageInstance) {
         this.fullpageInstance = new fullpage('#fullpage', {
           autoScrolling: true,
-          navigation: true,
+          navigation: true, 
           anchors: ['hero', 'latest', 'about'],
-          // navigationTooltips: ['首页', '最新文章', '关于我'],
-          showActiveTooltip: true,
-          scrollingSpeed: 700
+          showActiveTooltip: false, 
+          scrollingSpeed: 700,
+          css3: true, // 启用css3 transform动画，提升性能
+          scrollBar: false, // 关闭scrollBar，减少DOM重排
+          fitToSection: true, // 自动吸附到section，减少跳动
+          easingcss3: 'cubic-bezier(0.77,0,0.175,1)', // 更平滑的缓动曲线
+          hashChange: false, 
+          recordHistory: false,
+          lockAnchors: true,
+          menu: false,
         });
       }
     });
@@ -296,9 +312,10 @@ export default {
 }
 
 /* 最新文章 */
+
 .latest-posts {
   padding: 80px 0;
-  background: linear-gradient(135deg, rgba(236, 240, 241, 0.5) 0%, rgba(255, 255, 255, 0.8) 100%)
+  background: transparent;
 }
 
 .section-title {
@@ -377,7 +394,7 @@ export default {
 /* 关于我 */
 .about {
   padding: 80px 0;
-  background: linear-gradient(135deg, rgba(236, 240, 241, 0.5) 0%, rgba(255, 255, 255, 0.8) 100%);
+  background: transparent;
 }
 
 .about-content {
