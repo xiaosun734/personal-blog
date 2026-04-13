@@ -2,20 +2,18 @@
   <div class="home-page">
     <!-- 头部 -->
     <HeaderComponent />
-
-    <!-- 主要内容 -->
-    <main class="main">
+    <!-- fullpage 容器 -->
+    <div id="fullpage">
       <!-- 英雄区域 -->
-      <section class="hero">
+      <div class="section hero">
         <div class="container">
           <h2 class="hero-title">欢迎来到我的个人博客</h2>
           <p class="hero-subtitle">探索代码、设计与创新的交汇点</p>
           <button class="cta-button" @click="goTextHomepage">开始阅读</button>
         </div>
-      </section>
-
+      </div>
       <!-- 最新文章 -->
-      <section class="latest-posts">
+      <div class="section latest-posts">
         <div class="container">
           <h3 class="section-title">最新文章</h3>
           <div class="posts-grid">
@@ -33,10 +31,9 @@
             </article>
           </div>
         </div>
-      </section>
-
+      </div>
       <!-- 关于我 -->
-      <section class="about">
+      <div class="section about">
         <div class="container">
           <h3 class="section-title">关于我</h3>
           <div class="about-content">
@@ -45,25 +42,20 @@
               <p>在这里，你会找到关于编程、设计、科技趋势的文章。让我们一起探索这个充满无限可能的数字世界。</p>
             </div>
             <div class="about-image">
-              <img src="https://picui.ogmua.cn/s1/2026/04/01/69cd0873633dd.webp" alt="关于我" class="about-image-img">
+              <img src="https://cdn.imgos.cn/vip/2026/04/13/69dc4e3878df1.jpg" alt="关于我" class="about-image-img">
             </div>
           </div>
         </div>
-      </section>
-    </main>
-
-    <!-- 底部 -->
-    <footer class="footer">
-      <div class="container">
-        <p>&copy; 2026 我的个人博客. 保留所有权利.</p>
       </div>
-    </footer>
+    </div>
   </div>
 </template>
 
 <script>
 import HeaderComponent from '../components/header-component.vue'
 import articles from '../data/articles'
+import fullpage from '../plugins/fullpage'
+import 'fullpage.js/dist/fullpage.min.css'
 
 export default {
   name: 'HomePage',
@@ -73,21 +65,39 @@ export default {
   data() {
     return {
       posts: [],
-      cardStates: {}, // 为每个卡片维护独立的状态
-      // 为每个卡片定义不同的颜色方案
+      cardStates: {},
       colorSchemes: [
-        { start: { r: 52, g: 152, b: 219 }, end: { r: 155, g: 89, b: 182 } }, // 蓝到紫
-        { start: { r: 46, g: 204, b: 113 }, end: { r: 52, g: 152, b: 219 } }, // 绿到蓝
-        { start: { r: 231, g: 76, b: 60 }, end: { r: 241, g: 196, b: 15 } }  // 红到黄
-      ]
+        { start: { r: 52, g: 152, b: 219 }, end: { r: 155, g: 89, b: 182 } },
+        { start: { r: 46, g: 204, b: 113 }, end: { r: 52, g: 152, b: 219 } },
+        { start: { r: 231, g: 76, b: 60 }, end: { r: 241, g: 196, b: 15 } }
+      ],
+      fullpageInstance: null
     }
   },
   mounted() {
-    // 对文章按id排序，取最后三篇（id最靠后的）
     this.posts = articles
-      .sort((a, b) => a.id - b.id) // 按id升序排序
-      .slice(-3) // 取最后三篇
-      .reverse(); // 反转顺序，使最新的文章在前面
+      .sort((a, b) => a.id - b.id)
+      .slice(-3)
+      .reverse();
+    // 初始化 fullpage.js
+    this.$nextTick(() => {
+      if (!this.fullpageInstance) {
+        this.fullpageInstance = new fullpage('#fullpage', {
+          autoScrolling: true,
+          navigation: true,
+          anchors: ['hero', 'latest', 'about'],
+          // navigationTooltips: ['首页', '最新文章', '关于我'],
+          showActiveTooltip: true,
+          scrollingSpeed: 700
+        });
+      }
+    });
+  },
+  beforeDestroy() {
+    if (this.fullpageInstance && this.fullpageInstance.destroy) {
+      this.fullpageInstance.destroy('all');
+      this.fullpageInstance = null;
+    }
   },
   methods: {
     goTextHomepage() {
@@ -99,7 +109,6 @@ export default {
     getCardState(element) {
       const cardId = element.dataset.cardId;
       if (!this.cardStates[cardId]) {
-        // 获取当前卡片的颜色方案
         const colorScheme = this.colorSchemes[parseInt(cardId) % this.colorSchemes.length];
         this.cardStates[cardId] = {
           animationId: null,
@@ -120,19 +129,13 @@ export default {
       const state = this.getCardState(element);
       state.mouseX = event.clientX - rect.left;
       state.mouseY = event.clientY - rect.top;
-      
-      // 计算鼠标在元素内的相对位置（0-1）
       const relX = state.mouseX / rect.width;
       const relY = state.mouseY / rect.height;
-      
-      // 根据位置和卡片的颜色方案生成渐变颜色
       const scheme = state.colorScheme;
       const r = Math.floor(scheme.start.r + (scheme.end.r - scheme.start.r) * (relX + relY) / 2);
       const g = Math.floor(scheme.start.g + (scheme.end.g - scheme.start.g) * (relX + relY) / 2);
       const b = Math.floor(scheme.start.b + (scheme.end.b - scheme.start.b) * (relX + relY) / 2);
       state.color = `rgb(${r}, ${g}, ${b})`;
-      
-      // 无论是否在动画中，都更新渐变位置和颜色
       this.updateGradient(element, state);
     },
     handleMouseEnter(event) {
@@ -156,7 +159,6 @@ export default {
       if (state.animationId) {
         cancelAnimationFrame(state.animationId);
       }
-      
       const animate = () => {
         if (state.currentRadius < state.targetRadius) {
           state.currentRadius += 10;
@@ -169,9 +171,7 @@ export default {
             state.currentRadius = state.targetRadius;
           }
         }
-        
         this.updateGradient(element, state);
-        
         if ((state.currentRadius < state.targetRadius || state.currentRadius > state.targetRadius)) {
           state.animationId = requestAnimationFrame(animate);
         } else {
@@ -181,7 +181,6 @@ export default {
           }
         }
       };
-      
       animate();
     },
     updateGradient(element, state) {
@@ -204,11 +203,29 @@ export default {
   min-height: 100vh;
 }
 
+#fullpage {
+  height: 100vh;
+}
+
+.section {
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
 /* 公共容器 */
 .container {
   max-width: 1140px;
   margin: 0 auto;
   padding: 0 18px;
+}
+
+:deep(.fp-is-overflow .fp-overflow),
+:deep(.fp-is-overflow .fp-overflow.fp-auto-height),
+:deep(.fp-is-overflow .fp-overflow.fp-auto-height-responsive) {
+  overflow: visible !important;
+  max-height: none !important;
 }
 
 /* 主要内容 */
@@ -281,6 +298,7 @@ export default {
 /* 最新文章 */
 .latest-posts {
   padding: 80px 0;
+  background: linear-gradient(135deg, rgba(236, 240, 241, 0.5) 0%, rgba(255, 255, 255, 0.8) 100%)
 }
 
 .section-title {
@@ -378,34 +396,36 @@ export default {
 .about-image {
   width: 200px;
   height: 200px;
-  background: linear-gradient(135deg, #3498db, #9b59b6);
+  background: #ffffff;
   border-radius: 50%;
   flex-shrink: 0;
-  box-shadow: 0 8px 30px rgba(52, 152, 219, 0.3);
   position: relative;
   overflow: hidden;
+  z-index: 1;
+  box-shadow: 0 6px 24px rgba(44,62,80,0.10), 0 1.5px 6px rgba(52,152,219,0.10);
+  transition: box-shadow 0.3s cubic-bezier(.25,.8,.25,1);
 }
 
 .about-image-img {
   width: 100%;
   height: 100%;
   object-fit: cover;
+  object-position: right top; /* 调整图片显示部位，60% 40%表示显示图片的顶部右侧 */
   border-radius: 50%;
 }
 
-.about-image::before {
+/* .about-image::after {
   content: '';
   position: absolute;
-  top: -5px;
-  left: -5px;
-  right: -5px;
-  bottom: -5px;
-  background: linear-gradient(135deg, #9b59b6, #3498db);
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
   border-radius: 50%;
-  z-index: -1;
-  opacity: 0.3;
+  box-shadow: 0 8px 30px rgba(52, 152, 219, 0.2);
+  z-index: -1; 
 }
-
+*/
 /* 底部 */
 .footer {
   background: rgba(44, 62, 80, 0.95);
