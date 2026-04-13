@@ -55,7 +55,7 @@
     <!-- 底部 -->
     <footer class="footer">
       <div class="container">
-        <p>&copy; 2024 我的个人博客. 保留所有权利.</p>
+        <p>&copy; 2026 我的个人博客. 保留所有权利.</p>
       </div>
     </footer>
   </div>
