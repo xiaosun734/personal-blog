@@ -16,10 +16,43 @@
 <script>
 export default {
   name: 'HeaderComponent',
-  props: {
-    headerHidden: {
-      type: Boolean,
-      default: false
+  data() {
+    return {
+      headerHidden: false,
+      lastScrollTop: 0,
+      scrollThreshold: 100
+    }
+  },
+  computed: {
+    // 根据当前路由判断是否需要隐藏header
+    shouldHideOnScroll() {
+      const hidePages = ['TextHomePage', 'ClassificationPage', 'TextRead']
+      return hidePages.includes(this.$route.name)
+    }
+  },
+  mounted() {
+    if (this.shouldHideOnScroll) {
+      window.addEventListener('scroll', this.handleScroll)
+    }
+  },
+  beforeDestroy() {
+    window.removeEventListener('scroll', this.handleScroll)
+  },
+  methods: {
+    handleScroll() {
+      if (!this.shouldHideOnScroll) return
+      
+      const scrollTop = window.pageYOffset || document.documentElement.scrollTop
+      
+      if (scrollTop > this.lastScrollTop && scrollTop > this.scrollThreshold) {
+        // 向下滚动且超过阈值时隐藏
+        this.headerHidden = true
+      } else {
+        // 向上滚动或回到顶部时显示
+        this.headerHidden = false
+      }
+      
+      this.lastScrollTop = scrollTop
     }
   }
 }

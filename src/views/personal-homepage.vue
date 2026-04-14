@@ -7,7 +7,7 @@
       <section class="profile-section">
         <div class="profile-card">
           <div class="profile-avatar">
-            <img src="https://picui.ogmua.cn/s1/2026/04/01/69cd0873633dd.webp" alt="个人头像" />
+            <img src="https://cdn.imgos.cn/vip/2026/04/13/69dc4e3878df1.jpg" alt="个人头像" />
           </div>
           <h1 class="profile-name">Sunn</h1>
           <p class="profile-desc">前端开发者 | 技术爱好者 | 生活记录者</p>
@@ -128,7 +128,7 @@ export default {
       // 这里使用示例二维码图片，实际项目中应该使用真实的二维码
       switch(type) {
         case 'qq':
-          this.qrCodeSrc = 'https://picui.ogmua.cn/s1/2026/04/01/69cd0096d6933.webp';
+          this.qrCodeSrc = 'https://cdn.imgos.cn/vip/2026/04/14/69ddb17876def.png';
           this.qrCodeTitle = 'QQ二维码';
           break;
       }
@@ -188,6 +188,7 @@ export default {
   width: 100%;
   height: 100%;
   object-fit: cover;
+  object-position: right top; /* 调整图片显示部位，60% 40%表示显示图片的顶部右侧 */
 }
 
 .profile-name {
