@@ -17,7 +17,16 @@
         <div class="container">
           <h3 class="section-title">最新文章</h3>
           <div class="posts-grid">
-            <article class="post-card" v-for="(item,index) in posts" :key="index" @click="goToArticle(item.id)" style="cursor: pointer;">
+            <article 
+              class="post-card" 
+              v-for="(item,index) in posts" 
+              :key="index" 
+              @click="goToArticle(item.id)" 
+              :class="{ 'animate-in': isLatestPostsVisible }"
+              :style="{ 'transition-delay': `${index * 0.2}s` }"
+              ref="postCards"
+              style="cursor: pointer;"
+            >
               <div 
                 class="post-image" 
                 :data-card-id="index" 
@@ -71,7 +80,9 @@ export default {
         { start: { r: 46, g: 204, b: 113 }, end: { r: 52, g: 152, b: 219 } },
         { start: { r: 231, g: 76, b: 60 }, end: { r: 241, g: 196, b: 15 } }
       ],
-      fullpageInstance: null
+      fullpageInstance: null,
+      isLatestPostsVisible: false,
+      observer: null
     }
   },
   mounted() {
@@ -79,8 +90,12 @@ export default {
       .sort((a, b) => a.id - b.id)
       .slice(-3)
       .reverse();
-    // 初始化 fullpage.js
+    
+    // 初始化滚动观察器
     this.$nextTick(() => {
+      this.initScrollObserver();
+      
+      // 初始化 fullpage.js
       if (!this.fullpageInstance) {
         this.fullpageInstance = new fullpage('#fullpage', {
           autoScrolling: true,
@@ -89,7 +104,7 @@ export default {
           showActiveTooltip: false, 
           scrollingSpeed: 800, // 增加滚动速度，减少卡顿
           css3: true, // 启用css3 transform动画，提升性能
-          scrollBar: false, // 关闭scrollBar，减少DOM重排
+          scrollBar: true, // 打开scrollBar，确保可以继续滚动
           fitToSection: true, // 自动吸附到section，减少跳动
           easingcss3: 'cubic-bezier(0.645, 0.045, 0.355, 1)', // 使用更流畅的缓动曲线
           hashChange: false, 
@@ -100,6 +115,24 @@ export default {
           touchSensitivity: 15, // 降低触摸灵敏度
           continuousVertical: false, // 禁用连续滚动
           animateAnchor: false, // 禁用锚点动画
+          onLeave: (origin, destination) => {
+            // 当滚动到最新文章区域时触发动画
+            if (destination.index === 1) { // latest section
+              // 重新设置初始状态，确保每次进入都能触发动画
+              this.isLatestPostsVisible = false;
+              setTimeout(() => {
+                this.isLatestPostsVisible = true;
+              }, 300);
+            } else {
+              this.isLatestPostsVisible = false;
+            }
+          },
+          afterLoad: (anchorLink, index) => {
+            // 当加载完成后确保可以继续滚动
+            if (index === 2) { // about section
+              console.log('已到达关于我区域');
+            }
+          }
         });
         
         // 动态移除水印
@@ -229,6 +262,27 @@ export default {
       setTimeout(remove, 500);
       // setTimeout(remove, 1000);
       // setTimeout(remove, 2000);
+    },
+    initScrollObserver() {
+      // 使用Intersection Observer API监听元素可见性
+      if ('IntersectionObserver' in window) {
+        this.observer = new IntersectionObserver((entries) => {
+          entries.forEach(entry => {
+            if (entry.isIntersecting) {
+              this.isLatestPostsVisible = true;
+            }
+          });
+        }, {
+          threshold: 0.3, // 当30%的元素可见时触发
+          rootMargin: '0px 0px -100px 0px' // 提前100px触发
+        });
+        
+        // 观察最新文章区域
+        const latestPostsSection = document.querySelector('.latest-posts');
+        if (latestPostsSection) {
+          this.observer.observe(latestPostsSection);
+        }
+      }
     }
   }
 }
@@ -367,12 +421,24 @@ export default {
   transition: all 0.3s ease;
   backdrop-filter: blur(10px);
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+  opacity: 0;
+  transform: translateY(50px);
+  transition: all 0.6s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+}
+
+.post-card.animate-in {
+  opacity: 1;
+  transform: translateY(0);
 }
 
 .post-card:hover {
   transform: translateY(-8px);
   box-shadow: 0 12px 40px rgba(0, 0, 0, 0.12);
   border-color: rgba(52, 152, 219, 0.2);
+}
+
+.post-card.animate-in:hover {
+  transform: translateY(-8px);
 }
 
 .post-image {
