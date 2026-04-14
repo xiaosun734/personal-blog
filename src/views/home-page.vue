@@ -87,15 +87,19 @@ export default {
           navigation: true, 
           anchors: ['hero', 'latest', 'about'],
           showActiveTooltip: false, 
-          scrollingSpeed: 700,
+          scrollingSpeed: 800, // 增加滚动速度，减少卡顿
           css3: true, // 启用css3 transform动画，提升性能
           scrollBar: false, // 关闭scrollBar，减少DOM重排
           fitToSection: true, // 自动吸附到section，减少跳动
-          easingcss3: 'cubic-bezier(0.77,0,0.175,1)', // 更平滑的缓动曲线
+          easingcss3: 'cubic-bezier(0.645, 0.045, 0.355, 1)', // 使用更流畅的缓动曲线
           hashChange: false, 
           recordHistory: false,
           lockAnchors: true,
           menu: false,
+          normalScrollElements: '.post-card, .about-text', // 允许特定元素正常滚动
+          touchSensitivity: 15, // 降低触摸灵敏度
+          continuousVertical: false, // 禁用连续滚动
+          animateAnchor: false, // 禁用锚点动画
         });
         
         // 动态移除水印
@@ -248,6 +252,9 @@ export default {
   display: flex;
   flex-direction: column;
   justify-content: center;
+  transform: translateZ(0); /* 启用GPU加速 */
+  backface-visibility: hidden; /* 优化渲染性能 */
+  perspective: 1000px; /* 启用3D变换优化 */
 }
 
 /* 公共容器 */
