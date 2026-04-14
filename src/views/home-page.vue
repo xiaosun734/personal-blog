@@ -51,15 +51,6 @@
   </div>
 </template>
 
-// 放在 main.js 最顶部，早于任何 fullpage 初始化
-if (window.location.hash === '#/' || window.location.hash.startsWith('#/')) {
-    // 去掉 #/，但保留后面路径给 Vue Router 使用
-    const path = window.location.hash.slice(2); // 例如 '/home'
-    window.location.replace(window.location.pathname + (path ? '#/' + path : ''));
-    // 或者简单粗暴地清空：
-    // window.location.hash = '';
-}
-
 <script>
 import HeaderComponent from '../components/header-component.vue'
 import articles from '../data/articles'
@@ -106,6 +97,9 @@ export default {
           lockAnchors: true,
           menu: false,
         });
+        
+        // 动态移除水印
+        this.removeWatermark();
       }
     });
   },
@@ -205,6 +199,32 @@ export default {
       } else {
         element.style.background = 'linear-gradient(45deg, #ecf0f1, #bdc3c7)';
       }
+    },
+    removeWatermark() {
+      // 多次尝试移除水印，确保生效
+      const remove = () => {
+        const selectors = [
+          '.fp-watermark'
+        ];
+        
+        selectors.forEach(selector => {
+          const elements = document.querySelectorAll(selector);
+          elements.forEach(el => {
+            el.style.display = 'none';
+            el.style.visibility = 'hidden';
+            el.style.opacity = '0';
+            el.remove(); // 直接移除元素
+          });
+        });
+      };
+      
+      // 立即执行一次
+      remove();
+      
+      // 延迟执行，确保fullpage.js完全加载
+      setTimeout(remove, 500);
+      // setTimeout(remove, 1000);
+      // setTimeout(remove, 2000);
     }
   }
 }
