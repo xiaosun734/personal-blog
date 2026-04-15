@@ -1,6 +1,6 @@
 <template>
   <div class="home-page">
-    <!-- 头部 -->
+    <!-- 头部  -->
     <HeaderComponent />
     <!-- fullpage 容器 -->
     <div id="fullpage">
