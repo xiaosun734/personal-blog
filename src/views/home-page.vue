@@ -418,12 +418,12 @@ export default {
   border: 1px solid rgba(189, 195, 199, 0.3);
   border-radius: 12px;
   padding: 25px;
-  transition: all 0.3s ease;
   backdrop-filter: blur(10px);
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
   opacity: 0;
   transform: translateY(50px);
-  transition: all 0.6s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  transition: all 0.8s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  will-change: transform, opacity;
 }
 
 .post-card.animate-in {
@@ -435,6 +435,7 @@ export default {
   transform: translateY(-8px);
   box-shadow: 0 12px 40px rgba(0, 0, 0, 0.12);
   border-color: rgba(52, 152, 219, 0.2);
+  transition: all 0.3s ease;
 }
 
 .post-card.animate-in:hover {
