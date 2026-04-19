@@ -149,15 +149,15 @@ export default {
           <br>
           <div class="photo-gallery">
             <div class="photo-item">
-              <img src="https://picui.ogmua.cn/s1/2026/03/30/69c9d1bc56da6.webp" alt="自恋" width="300" height="400" />
+              <img src="https://cdn.imgos.cn/vip/2026/04/19/69e4d1e9500c1.jpg" alt="自恋" width="300" height="400" />
               <p class="photo-caption" style="opacity: 0.7">2025/7/10晚，小马自恋之夜</p>
             </div><br>
             <div class="photo-item">
-              <img src="https://picui.ogmua.cn/s1/2026/03/30/69c9d4bea6804.webp" alt="伪素颜" width="300" height="400" />
+              <img src="https://cdn.imgos.cn/vip/2026/04/19/69e4d1e9f37bc.jpg" alt="伪素颜" width="300" height="400" />
               <p class="photo-caption" style="opacity: 0.7">2025/1/5，伪素颜小马</p>
             </div><br>
             <div class="photo-item">
-              <img src="https://picui.ogmua.cn/s1/2026/03/30/69c9d66896363.webp" alt="小奶狗" width="300" height="450" />
+              <img src="https://cdn.imgos.cn/vip/2026/04/19/69e4d1e9954b1.jpg" alt="小奶狗" width="300" height="450" />
               <p class="photo-caption" style="opacity: 0.7">2025/4/4，小奶狗</p>
             </div>
           </div>
@@ -167,7 +167,7 @@ export default {
           <br>
           <div class="photo-gallery">
             <div class="photo-item">
-              <img src="https://picui.ogmua.cn/s1/2026/03/30/69c9da9f99e6a.webp" alt="忠奸不分" width="400" height="300" />
+              <img src="https://cdn.imgos.cn/vip/2026/04/19/69e4d1ef6fe9d.jpg" alt="忠奸不分" width="400" height="300" />
               <p class="photo-caption" style="opacity: 0.7">2025/3/8，忠奸不分</p>
             </div>
           </div>
