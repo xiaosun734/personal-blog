@@ -153,11 +153,11 @@ export default {
               <p class="photo-caption" style="opacity: 0.7; margin: 0; flex: 0 0 200px;">2025/7/10晚，小马自恋之夜</p>
             </div>
             <div class="photo-item" style="display: flex; align-items: center; gap: 30px; padding-left: 50px;">
-              <img src="https://cdn.imgos.cn/vip/2026/04/19/69e4d1e9f37bc.jpg" alt="伪素颜" width="50%" height="auto" />
+              <img src="https://cdn.imgos.cn/vip/2026/04/20/69e57409a70f3.jpg" alt="伪素颜" width="50%" height="auto" />
               <p class="photo-caption" style="opacity: 0.7; margin: 0; flex: 0 0 200px;">2025/1/5，伪素颜小马</p>
             </div>
             <div class="photo-item" style="display: flex; align-items: center; gap: 30px; padding-left: 50px;">
-              <img src="https://cdn.imgos.cn/vip/2026/04/19/69e4d1e9954b1.jpg" alt="小奶狗" width="40%" height="auto" />
+              <img src="https://cdn.imgos.cn/vip/2026/04/20/69e5742e2dd94.jpg" alt="小奶狗" width="40%" height="auto" />
               <p class="photo-caption" style="opacity: 0.7; margin: 0; flex: 0 0 200px;">2025/4/4，小奶狗</p>
             </div>
           </div>
@@ -167,14 +167,14 @@ export default {
           <br>
           <div class="photo-gallery" style="display: flex; flex-direction: column; gap: 20px; margin: 0 auto; max-width: 800px;">
             <div class="photo-item" style="display: flex; align-items: center; gap: 30px; padding-left: 50px;">
-              <img src="https://cdn.imgos.cn/vip/2026/04/19/69e4d1ef6fe9d.jpg" alt="忠奸不分" width="50%" height="auto" />
+              <img src="https://cdn.imgos.cn/vip/2026/04/20/69e5747458b76.jpg" alt="忠奸不分" width="50%" height="auto" />
               <p class="photo-caption" style="opacity: 0.7; margin: 0; flex: 0 0 200px;">2025/3/8，忠奸不分</p>
             </div>
           </div>
           <br>
           <div class="photo-gallery" style="display: flex; flex-direction: column; gap: 20px; margin: 0 auto; max-width: 800px;">
             <div class="photo-item" style="display: flex; align-items: center; gap: 30px; padding-left: 50px;">
-              <img src="https://cdn.imgos.cn/vip/2026/04/19/69e4dcea19d22.jpg" alt="忠奸不分" width="50%" height="auto" />
+              <img src="https://cdn.imgos.cn/vip/2026/04/20/69e574a858248.jpg" alt="忠奸不分" width="50%" height="auto" />
               <p class="photo-caption" style="opacity: 0.7; margin: 0; flex: 0 0 200px;">2024/12/6，忠诚！</p>
             </div>
           </div>
