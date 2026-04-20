@@ -23,7 +23,7 @@
               :key="index" 
               @click="goToArticle(item.id)" 
               :class="{ 'animate-in': isLatestPostsVisible }"
-              :style="{ 'transition-delay': `${index * 0.2}s` }"
+              :style="{ '--transition-delay': `${index * 0.2}s` }"
               ref="postCards"
               style="cursor: pointer;"
             >
