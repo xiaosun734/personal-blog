@@ -22,9 +22,14 @@
               v-for="(item,index) in posts" 
               :key="index" 
               @click="goToArticle(item.id)" 
+<<<<<<< HEAD
               @mouseleave="MouseLeaving"
               :class="{ 'animate-in': isLatestPostsVisible , 'mouse-leave': isMouseLeaving }"
               :style="{ '--delay': `${index * 0.2}s` }"
+=======
+              :class="{ 'animate-in': isLatestPostsVisible }"
+              :style="{ '--transition-delay': `${index * 0.2}s` }"
+>>>>>>> a98d8a8c4607d3bce4e56922a6414eb7394a21be
               ref="postCards"
               style="cursor: pointer;"
             >
@@ -432,7 +437,11 @@ export default {
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
   opacity: 0;
   transform: translateY(50px);
+<<<<<<< HEAD
   transition: opacity 0.8s cubic-bezier(0.25, 0.46, 0.45, 0.94) var(--delay, 0s), transform 0.8s cubic-bezier(0.25, 0.46, 0.45, 0.94) var(--delay, 0s);
+=======
+  transition: opacity 0.8s cubic-bezier(0.25, 0.46, 0.45, 0.94), transform 0.8s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+>>>>>>> a98d8a8c4607d3bce4e56922a6414eb7394a21be
   will-change: transform, opacity;
 }
 
@@ -442,6 +451,16 @@ export default {
   transition: opacity 0.8s cubic-bezier(0.25, 0.46, 0.45, 0.94) var(--delay, 0s), transform 0.8s cubic-bezier(0.25, 0.46, 0.45, 0.94) var(--delay, 0s);
 }
 
+<<<<<<< HEAD
+=======
+.post-card:hover {
+  transform: translateY(-8px);
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.12);
+  border-color: rgba(52, 152, 219, 0.2);
+  transition: transform 0.3s ease, box-shadow 0.3s ease, border-color 0.3s ease;
+  transition-delay: 0s !important;
+}
+>>>>>>> a98d8a8c4607d3bce4e56922a6414eb7394a21be
 
 .post-card.animate-in:hover {
   transform: translateY(-8px);
