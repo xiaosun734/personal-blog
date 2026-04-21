@@ -2,79 +2,90 @@
   <div class="personal-homepage">
     <BackButton />
     <HeaderComponent />
-    
-    <main class="content">
-      <section class="profile-section">
-        <div class="profile-card">
-          <div class="profile-avatar">
-            <img src="https://cdn.imgos.cn/vip/2026/04/13/69dc4e3878df1.jpg" alt="个人头像" />
+    <!-- fullpage 容器 -->
+    <div id="fullpage">
+      <!-- 个人资料板块 -->
+      <div class="section profile-section">
+        <div class="container">
+          <div class="profile-card">
+            <div class="profile-avatar">
+              <img src="https://cdn.imgos.cn/vip/2026/04/13/69dc4e3878df1.jpg" alt="个人头像" />
+            </div>
+            <h1 class="profile-name">Sunn</h1>
+            <p class="profile-desc">前端开发者 | 技术爱好者 | 生活记录者</p>
           </div>
-          <h1 class="profile-name">Sunn</h1>
-          <p class="profile-desc">前端开发者 | 技术爱好者 | 生活记录者</p>
         </div>
-      </section>
+      </div>
       
-      <section class="contact-section">
-        <h2 class="section-title">联系方式</h2>
-        <div class="contact-cards">
-          <div class="contact-card">
-            <div class="contact-icon">📧</div>
-            <h3>邮箱</h3>
-            <p>990853641@qq.com</p>
+      <!-- 联系方式板块 -->
+      <div class="section contact-section">
+        <div class="container">
+          <h2 class="section-title">联系方式</h2>
+          <div class="contact-cards">
+            <div class="contact-card">
+              <div class="contact-icon">📧</div>
+              <h3>邮箱</h3>
+              <p>990853641@qq.com</p>
+            </div>
+            <div class="contact-card">
+              <div class="contact-icon">🐱</div>
+              <h3>GitHub</h3>
+              <p><a href="https://github.com/xiaosun734" target="_blank">github.com/xiaosun734</a></p>
+            </div>
+            <div 
+              class="contact-card" 
+              @mouseenter="showQRCode('qq')"
+              @mousemove="moveQRCode"
+              @mouseleave="hideQRCode"
+            >
+              <div class="contact-icon">🐧</div>
+              <h3>QQ</h3>
+              <p>990853641</p>
+            </div>
+            <div class="contact-card">
+              <div class="contact-icon">📱</div>
+              <h3>电话(微信同号)</h3>
+              <p>17380552618</p>
+            </div>
           </div>
-          <div class="contact-card">
-            <div class="contact-icon">🐱</div>
-            <h3>GitHub</h3>
-            <p><a href="https://github.com/xiaosun734" target="_blank">github.com/xiaosun734</a></p>
-          </div>
+          
+          <!-- 二维码显示元素 -->
           <div 
-            class="contact-card" 
-            @mouseenter="showQRCode('qq')"
-            @mousemove="moveQRCode"
-            @mouseleave="hideQRCode"
+            v-if="showQR" 
+            class="qr-code-container"
+            :style="{ left: qrPosition.x + 'px', top: qrPosition.y + 'px' }"
           >
-            <div class="contact-icon">🐧</div>
-            <h3>QQ</h3>
-            <p>990853641</p>
-          </div>
-          <div class="contact-card">
-            <div class="contact-icon">📱</div>
-            <h3>电话(微信同号)</h3>
-            <p>17380552618</p>
+            <div class="qr-code">
+              <img :src="qrCodeSrc" alt="二维码" />
+              <p>{{ qrCodeTitle }}</p>
+            </div>
           </div>
         </div>
-        
-        <!-- 二维码显示元素 -->
-        <div 
-          v-if="showQR" 
-          class="qr-code-container"
-          :style="{ left: qrPosition.x + 'px', top: qrPosition.y + 'px' }"
-        >
-          <div class="qr-code">
-            <img :src="qrCodeSrc" alt="二维码" />
-            <p>{{ qrCodeTitle }}</p>
-          </div>
-        </div>
-      </section>
+      </div>
       
-      <section class="links-section">
-        <h2 class="section-title">友链</h2>
-        <div class="links-grid">
-          <div class="link-item" v-for="link in friendLinks" :key="link.name">
-            <a :href="link.url" target="_blank" :title="link.description">
-              <h3>{{ link.name }}</h3>
-              <p>{{ link.description }}</p>
-            </a>
+      <!-- 友链板块 -->
+      <div class="section links-section">
+        <div class="container">
+          <h2 class="section-title">友链</h2>
+          <div class="links-grid">
+            <div class="link-item" v-for="link in friendLinks" :key="link.name">
+              <a :href="link.url" target="_blank" :title="link.description">
+                <h3>{{ link.name }}</h3>
+                <p>{{ link.description }}</p>
+              </a>
+            </div>
           </div>
         </div>
-      </section>
-    </main>
+      </div>
+    </div>
   </div>
 </template>
 
 <script>
 import HeaderComponent from '../components/header-component.vue';
 import BackButton from '../components/back-button.vue'
+import fullpage from '../plugins/fullpage'
+import 'fullpage.js/dist/fullpage.min.css'
 
 export default {
   name: 'PersonalHomepage',
@@ -88,6 +99,7 @@ export default {
       qrPosition: { x: 0, y: 0 },
       qrCodeSrc: '',
       qrCodeTitle: '',
+      fullpageInstance: null,
       friendLinks: [
         {
           name: 'Vue.js',
@@ -122,10 +134,41 @@ export default {
       ]
     };
   },
+  mounted() {
+    this.$nextTick(() => {
+      if (!this.fullpageInstance) {
+        this.fullpageInstance = new fullpage('#fullpage', {
+          autoScrolling: true,
+          navigation: true, 
+          anchors: ['profile', 'contact', 'links'],
+          showActiveTooltip: false, 
+          scrollingSpeed: 800,
+          css3: true,
+          scrollBar: true,
+          fitToSection: true,
+          easingcss3: 'cubic-bezier(0.645, 0.045, 0.355, 1)',
+          hashChange: false, 
+          recordHistory: false,
+          lockAnchors: true,
+          menu: false,
+          normalScrollElements: '',
+          touchSensitivity: 15,
+          continuousVertical: false,
+          animateAnchor: false
+        });
+        this.removeWatermark();
+      }
+    });
+  },
+  beforeDestroy() {
+    if (this.fullpageInstance && this.fullpageInstance.destroy) {
+      this.fullpageInstance.destroy('all');
+      this.fullpageInstance = null;
+    }
+  },
   methods: {
     showQRCode(type) {
       this.showQR = true;
-      // 这里使用示例二维码图片，实际项目中应该使用真实的二维码
       switch(type) {
         case 'qq':
           this.qrCodeSrc = 'https://cdn.imgos.cn/vip/2026/04/14/69ddb17876def.png';
@@ -137,42 +180,77 @@ export default {
       this.showQR = false;
     },
     moveQRCode(event) {
-      // 调整二维码位置，使其在鼠标右下方
       this.qrPosition.x = event.clientX + 10;
       this.qrPosition.y = event.clientY + 10;
-    }
+    },
+    removeWatermark() {
+      // 多次尝试移除水印，确保生效
+      const remove = () => {
+        const selectors = [
+          '.fp-watermark'
+        ];
+        
+        selectors.forEach(selector => {
+          const elements = document.querySelectorAll(selector);
+          elements.forEach(el => {
+            el.style.display = 'none';
+            el.style.visibility = 'hidden';
+            el.style.opacity = '0';
+            el.remove(); // 直接移除元素
+          });
+        });
+      };
+      
+      // 立即执行一次
+      remove();
+      
+      // 延迟执行，确保fullpage.js完全加载
+      setTimeout(remove, 500);
+      // setTimeout(remove, 1000);
+      // setTimeout(remove, 2000);
+    },
   }
 };
 </script>
 
 <style scoped>
 .personal-homepage {
-  min-height: 100vh;
-  background: linear-gradient(180deg, #e8f0ff 0%, #fdfdff 60%, #ffffff 100%);
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
   color: #2f3a4b;
+  background: linear-gradient(180deg, #e8f0ff 0%, #fdfdff 60%, #ffffff 100%);
 }
 
-.content {
+#fullpage {
+  height: 100vh;
+}
+
+.section {
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  transform: translateZ(0);
+  backface-visibility: hidden;
+  perspective: 1000px;
+}
+
+.container {
   max-width: 1200px;
   margin: 0 auto;
-  padding: calc(120px + 30px) 20px 40px;
-}
-
-.profile-section {
-  display: flex;
-  justify-content: center;
-  margin-bottom: 60px;
+  padding: 0 20px;
 }
 
 .profile-card {
   text-align: center;
-  background: #ffffff;
+  background: rgba(255, 255, 255, 0.95);
   border-radius: 16px;
   padding: 40px;
+  backdrop-filter: blur(10px);
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1);
   border: 1px solid #e1e8ed;
   max-width: 400px;
   width: 100%;
+  margin: 0 auto;
 }
 
 .profile-avatar {
@@ -214,8 +292,11 @@ export default {
   padding-bottom: 10px;
 }
 
-.contact-section {
-  margin-bottom: 60px;
+:deep(.fp-is-overflow .fp-overflow),
+:deep(.fp-is-overflow .fp-overflow.fp-auto-height),
+:deep(.fp-is-overflow .fp-overflow.fp-auto-height-responsive) {
+  overflow: visible !important;
+  max-height: none !important;
 }
 
 .contact-cards {
@@ -232,12 +313,29 @@ export default {
   border: 1px solid #e1e8ed;
   text-align: center;
   transition: transform 0.3s ease, box-shadow 0.3s ease;
+  position: relative;
+  z-index: 1;
 }
 
 .contact-card:hover {
-  transform: translateY(-5px);
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+  transform: translateY(-8px) scale(1.05);
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.15);
+  z-index: 10;
 }
+
+.contact-card:has(+.contact-card:hover) {
+  transform: translateX(-10px);
+}
+
+.contact-card:hover + .contact-card {
+  transform: translateX(10px);
+}
+
+/* .contact-card:hover ~ .contact-card:hover {
+  transform: translateY(-8px) scale(1.05);
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.15);
+  z-index: 10;
+} */
 
 .contact-icon {
   font-size: 32px;

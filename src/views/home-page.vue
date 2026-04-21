@@ -113,7 +113,7 @@ export default {
           recordHistory: false,
           lockAnchors: true,
           menu: false,
-          normalScrollElements: '.post-card, .about-text', // 允许特定元素正常滚动
+          normalScrollElements: '', // 允许特定元素正常滚动
           touchSensitivity: 15, // 降低触摸灵敏度
           continuousVertical: false, // 禁用连续滚动
           animateAnchor: false, // 禁用锚点动画
