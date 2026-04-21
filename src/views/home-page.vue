@@ -22,8 +22,9 @@
               v-for="(item,index) in posts" 
               :key="index" 
               @click="goToArticle(item.id)" 
-              :class="{ 'animate-in': isLatestPostsVisible }"
-              :style="{ 'transition-delay': `${index * 0.2}s` }"
+              @mouseleave="MouseLeaving"
+              :class="{ 'animate-in': isLatestPostsVisible , 'mouse-leave': isMouseLeaving }"
+              :style="{ '--delay': `${index * 0.2}s` }"
               ref="postCards"
               style="cursor: pointer;"
             >
@@ -82,6 +83,7 @@ export default {
       ],
       fullpageInstance: null,
       isLatestPostsVisible: false,
+      isMouseLeaving: false,
       observer: null
     }
   },
@@ -134,6 +136,8 @@ export default {
             }
           }
         });
+
+
         
         // 动态移除水印
         this.removeWatermark();
@@ -283,6 +287,12 @@ export default {
           this.observer.observe(latestPostsSection);
         }
       }
+    },
+    MouseLeaving() {
+      this.isMouseLeaving = true;
+      setTimeout(() => {
+        this.isMouseLeaving = false;
+      }, 800); // 确保动画完成后重置状态
     }
   }
 }
@@ -422,24 +432,28 @@ export default {
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
   opacity: 0;
   transform: translateY(50px);
-  transition: all 0.8s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  transition: opacity 0.8s cubic-bezier(0.25, 0.46, 0.45, 0.94) var(--delay, 0s), transform 0.8s cubic-bezier(0.25, 0.46, 0.45, 0.94) var(--delay, 0s);
   will-change: transform, opacity;
 }
 
 .post-card.animate-in {
   opacity: 1;
   transform: translateY(0);
+  transition: opacity 0.8s cubic-bezier(0.25, 0.46, 0.45, 0.94) var(--delay, 0s), transform 0.8s cubic-bezier(0.25, 0.46, 0.45, 0.94) var(--delay, 0s);
 }
 
-.post-card:hover {
-  transform: translateY(-8px);
-  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.12);
-  border-color: rgba(52, 152, 219, 0.2);
-  transition: all 0.3s ease;
-}
 
 .post-card.animate-in:hover {
   transform: translateY(-8px);
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.12);
+  border-color: rgba(52, 152, 219, 0.2);
+  transition: transform 0.3s ease 0s, box-shadow 0.3s ease 0s, border-color 0.3s ease 0s;
+  will-change: transform, box-shadow, border-color;
+}
+
+.post-card.mouse-leave:not(:hover) {
+  transform: translateY(0);
+  transition: transform 0.8s ease 0s;
 }
 
 .post-image {
