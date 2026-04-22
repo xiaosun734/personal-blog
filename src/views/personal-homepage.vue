@@ -7,12 +7,32 @@
       <!-- 个人资料板块 -->
       <div class="section profile-section">
         <div class="container">
-          <div class="profile-card">
+          <div 
+            class="profile-card" 
+            :class="{ 'hovered': isProfileHovered }"
+            @mouseenter="showTagBoxes"
+            @mouseleave="hideTagBoxes"
+          >
             <div class="profile-avatar">
               <img src="https://cdn.imgos.cn/vip/2026/04/13/69dc4e3878df1.jpg" alt="个人头像" />
             </div>
             <h1 class="profile-name">Sunn</h1>
             <p class="profile-desc">前端开发者 | 技术爱好者 | 生活记录者</p>
+          </div>
+          
+          <!-- 标签盒子 -->
+          <div 
+            v-for="(tag, index) in tagBoxes" 
+            :key="index"
+            class="tag-box"
+            :class="{ 'show': showTags }"
+            :style="{ 
+              left: showTags ? tag.targetX : tag.x, 
+              top: showTags ? tag.targetY : tag.y,
+              animationDelay: index * 0.1 + 's'
+            }"
+          >
+            {{ tag.label }}
           </div>
         </div>
       </div>
@@ -131,6 +151,16 @@ export default {
           url: 'https://stackoverflow.com/',
           description: '程序员问答社区'
         }
+      ],
+      showTags: false,
+      isProfileHovered: false,
+      hoverDebounceTimer: null,
+      tagBoxes: [
+        { label: '雅思托福没考', x: '50%', y: '50%', targetX: '10%', targetY: '30%' },
+        { label: '国家级证件持有者', x: '50%', y: '50%', targetX: '80%', targetY: '40%' },
+        { label: '华籍华人', x: '50%', y: '50%', targetX: '15%', targetY: '70%' },
+        { label: 'mxbc品鉴师', x: '50%', y: '50%', targetX: '75%', targetY: '60%' },
+        { label: '诺贝尔奖觊觎者', x: '50%', y: '50%', targetX: '45%', targetY: '18%' }
       ]
     };
   },
@@ -167,6 +197,24 @@ export default {
     }
   },
   methods: {
+    showTagBoxes() {
+      if (this.hoverDebounceTimer) {
+        clearTimeout(this.hoverDebounceTimer);
+      }
+      this.hoverDebounceTimer = setTimeout(() => {
+        this.showTags = true;
+        this.isProfileHovered = true;
+      }, 100);
+    },
+    hideTagBoxes() {
+      if (this.hoverDebounceTimer) {
+        clearTimeout(this.hoverDebounceTimer);
+      }
+      this.hoverDebounceTimer = setTimeout(() => {
+        this.showTags = false;
+        this.isProfileHovered = false;
+      }, 200);
+    },
     showQRCode(type) {
       this.showQR = true;
       switch(type) {
@@ -252,11 +300,38 @@ export default {
   width: 100%;
   margin: 0 auto;
   transition: transform 0.3s ease, box-shadow 0.3s ease;
+  position: relative;
+  z-index: 10;
 }
 
-.profile-card:hover {
+.profile-card.hovered {
   transform: translateY(-8px);
   box-shadow: 0 12px 40px rgba(0, 0, 0, 0.15);
+  z-index: 10;
+}
+
+.tag-box {
+  position: absolute;
+  background: white;
+  color: #2c3e50;
+  padding: 8px 16px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 600;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  border: 1px solid #e1e8ed;
+  pointer-events: none;
+  z-index: 1;
+  opacity: 1;
+  transform: scale(0.3) translate(-50%, -50%);
+  transition: all 0.6s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  white-space: nowrap;
+}
+
+.tag-box.show {
+  transform: scale(1) translate(-50%, -50%);
+  z-index: 15;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
 }
 
 .profile-avatar {
