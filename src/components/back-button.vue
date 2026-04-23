@@ -17,7 +17,7 @@ export default {
   mounted() {
     window.addEventListener('scroll', this.handleScroll);
   },
-  beforeUnmount() {
+  beforeDestroy() {
     window.removeEventListener('scroll', this.handleScroll);
     if (this.scrollTimeout) {
       clearTimeout(this.scrollTimeout);
