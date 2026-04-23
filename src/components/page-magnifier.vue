@@ -14,11 +14,11 @@
       aria-hidden="true"
     >
       <div class="page-magnifier-scroll-layer" :style="magnifierScrollLayerStyle">
-        <slot name="scroll-overlay" />    //放大镜里要跟着页面滚动的内容
+        <slot name="scroll-overlay" />    
       </div>
 
       <div class="page-magnifier-fixed-layer" :style="magnifierFixedLayerStyle">
-        <slot name="fixed-overlay" />    //放大镜里固定定位的内容
+        <slot name="fixed-overlay" />    
       </div>
     </div>
 
@@ -38,7 +38,7 @@
       :aria-pressed="String(isMagnifierEnabled)"
       @click="toggleMagnifier"
     >
-      <slot name="toggle-icon">    //按钮图标
+      <slot name="toggle-icon">
         <svg viewBox="0 0 24 24" class="page-magnifier-toggle-icon" aria-hidden="true">
           <circle cx="10.5" cy="10.5" r="5.5"></circle>
           <line x1="15" y1="15" x2="20" y2="20"></line>
