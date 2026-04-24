@@ -195,6 +195,10 @@ export default {
       this.fullpageInstance.destroy('all');
       this.fullpageInstance = null;
     }
+    document.documentElement.classList.remove('fp-enabled', 'fp-viewing-intro', 'fp-viewing-skills', 'fp-viewing-contact')
+    document.body.classList.remove('fp-responsive', 'fp-enabled', 'fp-viewing-intro', 'fp-viewing-skills', 'fp-viewing-contact')
+    document.documentElement.removeAttribute('style')
+    document.body.removeAttribute('style')
   },
   methods: {
     showTagBoxes() {
