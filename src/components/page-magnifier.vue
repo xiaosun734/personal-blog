@@ -101,7 +101,10 @@ export default {
       mouseY: 0,
       surfaceLeft: 0,
       surfaceTop: 0,
-      surfaceWidth: 0
+      surfaceWidth: 0,
+      scrollTranslateY: 0,
+      lastScrollTop: 0,
+      scrollMotionTimeout: null
     };
   },
   computed: {
@@ -153,15 +156,22 @@ export default {
         '--page-magnifier-button-bottom': `${this.buttonOffsetBottom}px`,
         '--page-magnifier-button-left': `${this.buttonOffsetLeft}px`,
         '--page-magnifier-button-bottom-mobile': `${this.buttonOffsetBottomMobile}px`,
-        '--page-magnifier-button-left-mobile': `${this.buttonOffsetLeftMobile}px`
+        '--page-magnifier-button-left-mobile': `${this.buttonOffsetLeftMobile}px`,
+        '--page-magnifier-button-scroll-y': `${this.scrollTranslateY}px`
       };
     }
   },
   mounted() {
+    this.lastScrollTop = window.pageYOffset || document.documentElement.scrollTop || 0;
     this.syncSurfaceBounds();
+    window.addEventListener('scroll', this.handleScrollMotion, { passive: true });
   },
   beforeDestroy() {
+    window.removeEventListener('scroll', this.handleScrollMotion);
     this.removeViewportListeners();
+    if (this.scrollMotionTimeout) {
+      clearTimeout(this.scrollMotionTimeout);
+    }
   },
   methods: {
     toggleMagnifier() {
@@ -211,6 +221,22 @@ export default {
     },
     handleViewportBlur() {
       this.showMagnifierLens = false;
+    },
+    handleScrollMotion() {
+      const scrollTop = window.pageYOffset || document.documentElement.scrollTop || 0;
+      const scrollDelta = scrollTop - this.lastScrollTop;
+
+      this.scrollTranslateY = Math.max(Math.min(this.scrollTranslateY + scrollDelta * 0.2, 10), -10);
+      this.lastScrollTop = scrollTop;
+
+      if (this.scrollMotionTimeout) {
+        clearTimeout(this.scrollMotionTimeout);
+      }
+
+      this.scrollMotionTimeout = setTimeout(() => {
+        this.scrollTranslateY = 0;
+        this.scrollMotionTimeout = null;
+      }, 150);
     },
     addViewportListeners() {
       window.addEventListener('scroll', this.syncSurfaceBounds, { passive: true });
@@ -284,10 +310,11 @@ export default {
   bottom: var(--page-magnifier-button-bottom, 80px);
   left: var(--page-magnifier-button-left, 20px);
   z-index: 1000;
+  transform: translateY(var(--page-magnifier-button-scroll-y, 0px));
 }
 
 .page-magnifier-toggle-button:hover {
-  transform: translateY(-2px);
+  transform: translateY(calc(var(--page-magnifier-button-scroll-y, 0px) - 2px));
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
   border-color: #414548;
 }

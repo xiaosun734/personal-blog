@@ -29,7 +29,7 @@ export default {
     return {
       headerHidden: false,
       lastScrollTop: 0,
-      scrollThreshold: 100,
+      scrollThreshold: 72,
       indicatorWidth: 0,
       indicatorOffset: 0,
       indicatorReady: false,
@@ -37,7 +37,8 @@ export default {
       disableIndicatorTransition: true,
       navigationTimer: null,
       animationTimer: null,
-      isIndicatorAnimating: false
+      isIndicatorAnimating: false,
+      isScrollListenerBound: false
     }
   },
   computed: {
@@ -73,22 +74,21 @@ export default {
   watch: {
     $route() {
       this.pendingNavIndex = null
+      this.syncScrollBehavior()
       this.$nextTick(() => {
         this.updateIndicator(this.activeNavIndex, true)
       })
     }
   },
   mounted() {
-    if (this.shouldHideOnScroll) {
-      window.addEventListener('scroll', this.handleScroll)
-    }
     window.addEventListener('resize', this.handleResize)
+    this.syncScrollBehavior()
     this.$nextTick(() => {
       this.updateIndicator(this.activeNavIndex, true)
     })
   },
   beforeDestroy() {
-    window.removeEventListener('scroll', this.handleScroll)
+    this.unbindScrollListener()
     window.removeEventListener('resize', this.handleResize)
     if (this.navigationTimer) {
       clearTimeout(this.navigationTimer)
@@ -98,10 +98,34 @@ export default {
     }
   },
   methods: {
+    syncScrollBehavior() {
+      if (this.shouldHideOnScroll) {
+        this.bindScrollListener()
+        this.lastScrollTop = window.pageYOffset || document.documentElement.scrollTop || 0
+        this.handleScroll()
+        return
+      }
+
+      this.unbindScrollListener()
+      this.headerHidden = false
+      this.lastScrollTop = 0
+    },
+    bindScrollListener() {
+      if (this.isScrollListenerBound) return
+
+      window.addEventListener('scroll', this.handleScroll, { passive: true })
+      this.isScrollListenerBound = true
+    },
+    unbindScrollListener() {
+      if (!this.isScrollListenerBound) return
+
+      window.removeEventListener('scroll', this.handleScroll)
+      this.isScrollListenerBound = false
+    },
     handleScroll() {
       if (!this.shouldHideOnScroll) return
 
-      const scrollTop = window.pageYOffset || document.documentElement.scrollTop
+      const scrollTop = window.pageYOffset || document.documentElement.scrollTop || 0
 
       if (scrollTop > this.lastScrollTop && scrollTop > this.scrollThreshold) {
         this.headerHidden = true
@@ -198,7 +222,7 @@ export default {
   box-sizing: border-box;
   font-family: Avenir, Helvetica, Arial, sans-serif;
   box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
-  transition: transform 0.3s ease;
+  transition: transform 0.42s cubic-bezier(0.22, 1, 0.36, 1);
 }
 
 .header-hidden {

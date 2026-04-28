@@ -1,71 +1,84 @@
 <template>
   <div class="home-page">
-    <!-- 头部  -->
     <HeaderComponent />
-    <!-- fullpage 容器 -->
-    <div id="fullpage">
-      <!-- 英雄区域 -->
-      <div class="section hero">
-        <div class="container">
-          <h2 class="hero-title">欢迎来到我的个人博客</h2>
-          <p class="hero-subtitle">探索代码、设计与创新的交汇点</p>
-          <button class="cta-button" @click="goTextHomepage">开始阅读</button>
+
+    <main class="sections">
+      <section
+        class="section hero observe-section"
+        data-section-id="hero"
+        :class="sectionStates.hero"
+      >
+        <div class="container hero-content">
+          <h2 class="hero-title fade-item" style="--delay: 0.05s;">欢迎来到我的个人博客</h2>
+          <p class="hero-subtitle fade-item" style="--delay: 0.15s;">探索代码、设计与创新的交汇点</p>
+          <button class="cta-button fade-item" style="--delay: 0.25s;" @click="goTextHomepage">
+            开始阅读
+          </button>
         </div>
-      </div>
-      <!-- 最新文章 -->
-      <div class="section latest-posts">
+      </section>
+
+      <section
+        class="section latest-posts observe-section"
+        data-section-id="latest"
+        :class="sectionStates.latest"
+      >
         <div class="container">
-          <h3 class="section-title">最新文章</h3>
+          <h3 class="section-title fade-item" style="--delay: 0.05s;">最新文章</h3>
+
           <div class="posts-grid">
-            <article 
-              class="post-card" 
-              v-for="(item,index) in posts" 
-              :key="index" 
-              @click="goToArticle(item.id)" 
-              @mouseleave="MouseLeaving"
-              :class="{ 'animate-in': isLatestPostsVisible , 'mouse-leave': isMouseLeaving }"
-              :style="{ '--delay': `${index * 0.2}s` }"
-              ref="postCards"
-              style="cursor: pointer;"
+            <article
+              v-for="(item, index) in posts"
+              :key="item.id || index"
+              class="post-card fade-item"
+              :style="{ '--delay': `${0.14 + index * 0.1}s` }"
+              @click="goToArticle(item.id)"
             >
-              <div 
-                class="post-image" 
-                :data-card-id="index" 
-                @mousemove="handleMouseMove" 
-                @mouseenter="handleMouseEnter" 
+              <div
+                class="post-image"
+                :data-card-id="index"
+                @mousemove="handleMouseMove"
+                @mouseenter="handleMouseEnter"
                 @mouseleave="handleMouseLeave"
               ></div>
               <h4>{{ item.title }}</h4>
               <p>{{ item.desc }}</p>
-              <a href="#" class="read-more">阅读更多</a>
+              <span class="read-more">阅读更多</span>
             </article>
           </div>
         </div>
-      </div>
-      <!-- 关于我 -->
-      <div class="section about">
+      </section>
+
+      <section
+        class="section about observe-section"
+        data-section-id="about"
+        :class="sectionStates.about"
+      >
         <div class="container">
-          <h3 class="section-title">关于我</h3>
+          <h3 class="section-title fade-item" style="--delay: 0.05s;">关于我</h3>
+
           <div class="about-content">
-            <div class="about-text">
-              <p>我是一名热爱技术的开发者，通过这个博客，我希望分享我的学习心得和技术见解。</p>
-              <p>在这里，你会找到关于编程、设计、科技趋势的文章。让我们一起探索这个充满无限可能的数字世界。</p>
+            <div class="about-text fade-item" style="--delay: 0.14s;">
+              <p>我是一名热爱技术的开发者，希望通过这个博客分享学习心得、项目经验和技术见解。</p>
+              <p>这里会记录编程、设计和数字生活里的观察与思考，也欢迎你一起继续往下探索。</p>
             </div>
-            <div class="about-image">
-              <img src="https://cdn.imgos.cn/vip/2026/04/13/69dc4e3878df1.jpg" alt="关于我" class="about-image-img">
+
+            <div class="about-image fade-item" style="--delay: 0.24s;">
+              <img
+                src="https://cdn.imgos.cn/vip/2026/04/13/69dc4e3878df1.jpg"
+                alt="关于我"
+                class="about-image-img"
+              />
             </div>
           </div>
         </div>
-      </div>
-    </div>
+      </section>
+    </main>
   </div>
 </template>
 
 <script>
 import HeaderComponent from '../components/header-component.vue'
 import articles from '../data/articles'
-import fullpage from '../plugins/fullpage'
-import 'fullpage.js/dist/fullpage.min.css'
 
 export default {
   name: 'HomePage',
@@ -81,80 +94,253 @@ export default {
         { start: { r: 46, g: 204, b: 113 }, end: { r: 52, g: 152, b: 219 } },
         { start: { r: 231, g: 76, b: 60 }, end: { r: 241, g: 196, b: 15 } }
       ],
-      fullpageInstance: null,
-      isLatestPostsVisible: false,
-      isMouseLeaving: false,
-      observer: null
+      observer: null,
+      snapTimer: null,
+      snapAnimationId: null,
+      isAutoSnapping: false,
+      lastScrollTop: 0,
+      scrollDirection: 'down',
+      activeSectionIndex: 0,
+      sectionStates: {
+        hero: 'is-hidden-down',
+        latest: 'is-hidden-down',
+        about: 'is-hidden-down'
+      }
     }
   },
   mounted() {
-    this.posts = articles
+    this.posts = [...articles]
       .sort((a, b) => a.id - b.id)
       .slice(-3)
-      .reverse();
-    
-    // 初始化滚动观察器
+      .reverse()
+
     this.$nextTick(() => {
-      this.initScrollObserver();
-      
-      // 初始化 fullpage.js
-      if (!this.fullpageInstance) {
-        this.fullpageInstance = new fullpage('#fullpage', {
-          autoScrolling: true,
-          navigation: true, 
-          anchors: ['hero', 'latest', 'about'],
-          showActiveTooltip: false, 
-          scrollingSpeed: 800, // 增加滚动速度，减少卡顿
-          css3: true, // 启用css3 transform动画，提升性能
-          scrollBar: true, // 打开scrollBar，确保可以继续滚动
-          fitToSection: true, // 自动吸附到section，减少跳动
-          easingcss3: 'cubic-bezier(0.645, 0.045, 0.355, 1)', // 使用更流畅的缓动曲线
-          hashChange: false, 
-          recordHistory: false,
-          lockAnchors: true,
-          menu: false,
-          normalScrollElements: '', // 允许特定元素正常滚动
-          touchSensitivity: 15, // 降低触摸灵敏度
-          continuousVertical: false, // 禁用连续滚动
-          animateAnchor: false, // 禁用锚点动画
-          onLeave: (origin, destination) => {
-            // 当滚动到最新文章区域时触发动画
-            if (destination.index === 1) { // latest section
-              // 重新设置初始状态，确保每次进入都能触发动画
-              this.isLatestPostsVisible = false;
-              setTimeout(() => {
-                this.isLatestPostsVisible = true;
-              }, 300);
-            } else {
-              this.isLatestPostsVisible = false;
-            }
-          },
-          afterLoad: (anchorLink, index) => {
-            // 当加载完成后确保可以继续滚动
-            if (index === 2) { // about section
-              console.log('已到达关于我区域');
-            }
-          }
-        });
-
-
-        
-        // 动态移除水印
-        this.removeWatermark();
-      }
-    });
+      this.initSectionObserver()
+      this.lastScrollTop = window.pageYOffset || document.documentElement.scrollTop || 0
+      this.activeSectionIndex = this.getNearestSectionIndex()
+      window.addEventListener('scroll', this.handleSectionScroll, { passive: true })
+      window.addEventListener('scrollend', this.handleScrollEnd)
+      window.addEventListener('resize', this.handleViewportResize)
+      window.addEventListener('wheel', this.handleSnapInterrupt, { passive: true })
+      window.addEventListener('touchstart', this.handleSnapInterrupt, { passive: true })
+      this.queueSectionSnap(48)
+    })
   },
   beforeDestroy() {
-    if (this.fullpageInstance && this.fullpageInstance.destroy) {
-      this.fullpageInstance.destroy('all');
-      this.fullpageInstance = null;
+    window.removeEventListener('scroll', this.handleSectionScroll)
+    window.removeEventListener('scrollend', this.handleScrollEnd)
+    window.removeEventListener('resize', this.handleViewportResize)
+    window.removeEventListener('wheel', this.handleSnapInterrupt)
+    window.removeEventListener('touchstart', this.handleSnapInterrupt)
+
+    if (this.observer) {
+      this.observer.disconnect()
+      this.observer = null
     }
-    document.documentElement.classList.remove('fp-enabled', 'fp-viewing-hero', 'fp-viewing-latest', 'fp-viewing-about')
-    document.body.classList.remove('fp-responsive', 'fp-enabled', 'fp-viewing-hero', 'fp-viewing-latest', 'fp-viewing-about')
-    document.documentElement.removeAttribute('style')
-    document.body.removeAttribute('style')
+
+    if (this.snapTimer) {
+      clearTimeout(this.snapTimer)
+      this.snapTimer = null
+    }
+
+    if (this.snapAnimationId) {
+      cancelAnimationFrame(this.snapAnimationId)
+      this.snapAnimationId = null
+    }
+
+    Object.values(this.cardStates).forEach((state) => {
+      if (state.animationId) {
+        cancelAnimationFrame(state.animationId)
+      }
+    })
   },
   methods: {
+    handleSectionScroll() {
+      const currentScrollTop = window.pageYOffset || document.documentElement.scrollTop || 0
+      if (currentScrollTop > this.lastScrollTop + 1) {
+        this.scrollDirection = 'down'
+      } else if (currentScrollTop < this.lastScrollTop - 1) {
+        this.scrollDirection = 'up'
+      }
+      this.lastScrollTop = currentScrollTop
+
+      this.updateSectionViewportStates()
+
+      if (this.isAutoSnapping) return
+      this.queueSectionSnap()
+    },
+    handleViewportResize() {
+      this.updateSectionViewportStates()
+
+      if (this.isAutoSnapping) return
+      this.activeSectionIndex = this.getNearestSectionIndex()
+      this.queueSectionSnap(36)
+    },
+    handleScrollEnd() {
+      if (this.isAutoSnapping) return
+      this.queueSectionSnap(0)
+    },
+    handleSnapInterrupt() {
+      if (!this.isAutoSnapping) return
+      this.cancelAutoSnap()
+    },
+    queueSectionSnap(delay = 18) {
+      if (this.snapTimer) {
+        clearTimeout(this.snapTimer)
+      }
+
+      const runSnap = () => {
+        this.snapTimer = null
+        this.snapToDirectionalSection()
+      }
+
+      if (delay <= 0) {
+        runSnap()
+        return
+      }
+
+      this.snapTimer = setTimeout(runSnap, delay)
+    },
+    getSectionElements() {
+      return Array.from(this.$el.querySelectorAll('.observe-section'))
+    },
+    getSectionMetrics() {
+      return this.getSectionElements().map((section, index) => ({
+        index,
+        section,
+        rect: section.getBoundingClientRect()
+      }))
+    },
+    getVisibleHeight(rect, viewportHeight = window.innerHeight || document.documentElement.clientHeight) {
+      const visibleTop = Math.max(rect.top, 0)
+      const visibleBottom = Math.min(rect.bottom, viewportHeight)
+      return Math.max(0, visibleBottom - visibleTop)
+    },
+    getNearestSectionIndex(metrics = this.getSectionMetrics()) {
+      if (!metrics.length) return 0
+
+      let nearestIndex = 0
+      let nearestDistance = Number.POSITIVE_INFINITY
+
+      metrics.forEach((item) => {
+        const distance = Math.abs(item.rect.top)
+        if (distance < nearestDistance) {
+          nearestDistance = distance
+          nearestIndex = item.index
+        }
+      })
+
+      return nearestIndex
+    },
+    snapToDirectionalSection() {
+      const metrics = this.getSectionMetrics()
+      if (!metrics.length) return
+
+      const viewportHeight = window.innerHeight || document.documentElement.clientHeight
+      const currentScrollTop = window.pageYOffset || document.documentElement.scrollTop || 0
+      const nearestIndex = this.getNearestSectionIndex(metrics)
+
+      if (
+        this.activeSectionIndex < 0 ||
+        this.activeSectionIndex >= metrics.length ||
+        Math.abs(this.activeSectionIndex - nearestIndex) > 1 ||
+        this.getVisibleHeight(metrics[this.activeSectionIndex].rect, viewportHeight) === 0
+      ) {
+        this.activeSectionIndex = nearestIndex
+      }
+
+      const baseIndex = this.activeSectionIndex
+      const directionalIndex = this.scrollDirection === 'up'
+        ? Math.max(0, baseIndex - 1)
+        : Math.min(metrics.length - 1, baseIndex + 1)
+      const directionalSection = metrics[directionalIndex]
+      const directionalVisibleHeight = directionalSection
+        ? this.getVisibleHeight(directionalSection.rect, viewportHeight)
+        : 0
+
+      let targetIndex = baseIndex
+      if (directionalIndex !== baseIndex && directionalVisibleHeight >= viewportHeight / 3) {
+        targetIndex = directionalIndex
+      }
+
+      const targetMetric = metrics[targetIndex]
+      const targetScrollTop = Math.max(0, currentScrollTop + targetMetric.rect.top)
+
+      if (Math.abs(targetScrollTop - currentScrollTop) < 4) {
+        this.activeSectionIndex = targetIndex
+        return
+      }
+
+      this.animateSectionSnap(targetScrollTop, targetIndex)
+    },
+    animateSectionSnap(targetScrollTop, targetIndex) {
+      this.cancelAutoSnap()
+
+      const startScrollTop = window.pageYOffset || document.documentElement.scrollTop || 0
+      const distance = targetScrollTop - startScrollTop
+      const duration = Math.max(420, Math.min(760, Math.abs(distance) * 0.52))
+      const startTime = performance.now()
+
+      this.isAutoSnapping = true
+
+      const step = (now) => {
+        const progress = Math.min(1, (now - startTime) / duration)
+        const eased = progress < 0.5
+          ? 4 * progress * progress * progress
+          : 1 - Math.pow(-2 * progress + 2, 3) / 2
+
+        window.scrollTo(0, startScrollTop + distance * eased)
+        this.updateSectionViewportStates()
+
+        if (progress < 1 && this.isAutoSnapping) {
+          this.snapAnimationId = requestAnimationFrame(step)
+          return
+        }
+
+        this.snapAnimationId = null
+        this.isAutoSnapping = false
+        this.activeSectionIndex = targetIndex
+        this.lastScrollTop = window.pageYOffset || document.documentElement.scrollTop || targetScrollTop
+      }
+
+      this.snapAnimationId = requestAnimationFrame(step)
+    },
+    cancelAutoSnap() {
+      if (this.snapAnimationId) {
+        cancelAnimationFrame(this.snapAnimationId)
+        this.snapAnimationId = null
+      }
+
+      this.isAutoSnapping = false
+    },
+    initSectionObserver() {
+      this.updateSectionViewportStates()
+    },
+    updateSectionViewportStates() {
+      const sections = this.getSectionElements()
+      if (!sections.length) return
+
+      const viewportHeight = window.innerHeight || document.documentElement.clientHeight
+      const visibleBandTop = viewportHeight * 0.24
+      const visibleBandBottom = viewportHeight * 0.76
+
+      sections.forEach((section) => {
+        const { sectionId } = section.dataset
+        if (!sectionId) return
+
+        const rect = section.getBoundingClientRect()
+        const centerY = rect.top + rect.height / 2
+        let nextState = 'is-visible'
+
+        if (centerY < visibleBandTop) {
+          nextState = 'is-hidden-up'
+        } else if (centerY > visibleBandBottom) {
+          nextState = 'is-hidden-down'
+        }
+
+        this.$set(this.sectionStates, sectionId, nextState)
+      })
+    },
     goTextHomepage() {
       this.$router.push('/text-homepage')
     },
@@ -162,9 +348,10 @@ export default {
       this.$router.push(`/article/${id}`)
     },
     getCardState(element) {
-      const cardId = element.dataset.cardId;
+      const cardId = element.dataset.cardId
+
       if (!this.cardStates[cardId]) {
-        const colorScheme = this.colorSchemes[parseInt(cardId) % this.colorSchemes.length];
+        const colorScheme = this.colorSchemes[parseInt(cardId, 10) % this.colorSchemes.length]
         this.cardStates[cardId] = {
           animationId: null,
           currentRadius: 0,
@@ -172,209 +359,195 @@ export default {
           mouseX: 0,
           mouseY: 0,
           color: '#3498db',
-          colorScheme: colorScheme,
-          isAnimating: false
-        };
+          colorScheme
+        }
       }
-      return this.cardStates[cardId];
+
+      return this.cardStates[cardId]
     },
     handleMouseMove(event) {
-      const element = event.currentTarget;
-      const rect = element.getBoundingClientRect();
-      const state = this.getCardState(element);
-      state.mouseX = event.clientX - rect.left;
-      state.mouseY = event.clientY - rect.top;
-      const relX = state.mouseX / rect.width;
-      const relY = state.mouseY / rect.height;
-      const scheme = state.colorScheme;
-      const r = Math.floor(scheme.start.r + (scheme.end.r - scheme.start.r) * (relX + relY) / 2);
-      const g = Math.floor(scheme.start.g + (scheme.end.g - scheme.start.g) * (relX + relY) / 2);
-      const b = Math.floor(scheme.start.b + (scheme.end.b - scheme.start.b) * (relX + relY) / 2);
-      state.color = `rgb(${r}, ${g}, ${b})`;
-      this.updateGradient(element, state);
+      const element = event.currentTarget
+      const rect = element.getBoundingClientRect()
+      const state = this.getCardState(element)
+
+      state.mouseX = event.clientX - rect.left
+      state.mouseY = event.clientY - rect.top
+
+      const relX = state.mouseX / rect.width
+      const relY = state.mouseY / rect.height
+      const scheme = state.colorScheme
+      const ratio = (relX + relY) / 2
+      const r = Math.floor(scheme.start.r + (scheme.end.r - scheme.start.r) * ratio)
+      const g = Math.floor(scheme.start.g + (scheme.end.g - scheme.start.g) * ratio)
+      const b = Math.floor(scheme.start.b + (scheme.end.b - scheme.start.b) * ratio)
+
+      state.color = `rgb(${r}, ${g}, ${b})`
+      this.updateGradient(element, state)
     },
     handleMouseEnter(event) {
-      const element = event.currentTarget;
-      const rect = element.getBoundingClientRect();
-      const state = this.getCardState(element);
-      state.mouseX = event.clientX - rect.left;
-      state.mouseY = event.clientY - rect.top;
-      state.currentRadius = 0;
-      state.targetRadius = 150;
-      state.isAnimating = true;
-      this.animateGradient(element, state);
+      const element = event.currentTarget
+      const rect = element.getBoundingClientRect()
+      const state = this.getCardState(element)
+
+      state.mouseX = event.clientX - rect.left
+      state.mouseY = event.clientY - rect.top
+      state.currentRadius = 0
+      state.targetRadius = 150
+
+      this.animateGradient(element, state)
     },
     handleMouseLeave(event) {
-      const element = event.currentTarget;
-      const state = this.getCardState(element);
-      state.targetRadius = 0;
-      this.animateGradient(element, state, true);
+      const element = event.currentTarget
+      const state = this.getCardState(element)
+
+      state.targetRadius = 0
+      this.animateGradient(element, state)
     },
-    animateGradient(element, state, isLeaving = false) {
+    animateGradient(element, state) {
       if (state.animationId) {
-        cancelAnimationFrame(state.animationId);
+        cancelAnimationFrame(state.animationId)
       }
+
       const animate = () => {
         if (state.currentRadius < state.targetRadius) {
-          state.currentRadius += 10;
-          if (state.currentRadius > state.targetRadius) {
-            state.currentRadius = state.targetRadius;
-          }
+          state.currentRadius = Math.min(state.currentRadius + 10, state.targetRadius)
         } else if (state.currentRadius > state.targetRadius) {
-          state.currentRadius -= 10;
-          if (state.currentRadius < state.targetRadius) {
-            state.currentRadius = state.targetRadius;
-          }
+          state.currentRadius = Math.max(state.currentRadius - 10, state.targetRadius)
         }
-        this.updateGradient(element, state);
-        if ((state.currentRadius < state.targetRadius || state.currentRadius > state.targetRadius)) {
-          state.animationId = requestAnimationFrame(animate);
+
+        this.updateGradient(element, state)
+
+        if (state.currentRadius !== state.targetRadius) {
+          state.animationId = requestAnimationFrame(animate)
         } else {
-          state.animationId = null;
-          if (isLeaving) {
-            state.isAnimating = false;
-          }
+          state.animationId = null
         }
-      };
-      animate();
+      }
+
+      animate()
     },
     updateGradient(element, state) {
       if (state.currentRadius > 0) {
-        element.style.background = `radial-gradient(circle ${state.currentRadius}px at ${state.mouseX}px ${state.mouseY}px, ${state.color}, transparent), linear-gradient(45deg, #ecf0f1, #bdc3c7)`;
-      } else {
-        element.style.background = 'linear-gradient(45deg, #ecf0f1, #bdc3c7)';
+        element.style.background = `radial-gradient(circle ${state.currentRadius}px at ${state.mouseX}px ${state.mouseY}px, ${state.color}, transparent), linear-gradient(45deg, #ecf0f1, #bdc3c7)`
+        return
       }
-    },
-    removeWatermark() {
-      // 多次尝试移除水印，确保生效
-      const remove = () => {
-        const selectors = [
-          '.fp-watermark'
-        ];
-        
-        selectors.forEach(selector => {
-          const elements = document.querySelectorAll(selector);
-          elements.forEach(el => {
-            el.style.display = 'none';
-            el.style.visibility = 'hidden';
-            el.style.opacity = '0';
-            el.remove(); // 直接移除元素
-          });
-        });
-      };
-      
-      // 立即执行一次
-      remove();
-      
-      // 延迟执行，确保fullpage.js完全加载
-      setTimeout(remove, 500);
-      // setTimeout(remove, 1000);
-      // setTimeout(remove, 2000);
-    },
-    initScrollObserver() {
-      // 使用Intersection Observer API监听元素可见性
-      if ('IntersectionObserver' in window) {
-        this.observer = new IntersectionObserver((entries) => {
-          entries.forEach(entry => {
-            if (entry.isIntersecting) {
-              this.isLatestPostsVisible = true;
-            }
-          });
-        }, {
-          threshold: 0.3, // 当30%的元素可见时触发
-          rootMargin: '0px 0px -100px 0px' // 提前100px触发
-        });
-        
-        // 观察最新文章区域
-        const latestPostsSection = document.querySelector('.latest-posts');
-        if (latestPostsSection) {
-          this.observer.observe(latestPostsSection);
-        }
-      }
-    },
-    MouseLeaving() {
-      this.isMouseLeaving = true;
-      setTimeout(() => {
-        this.isMouseLeaving = false;
-      }, 800); // 确保动画完成后重置状态
+
+      element.style.background = 'linear-gradient(45deg, #ecf0f1, #bdc3c7)'
     }
   }
 }
 </script>
 
 <style scoped>
-/* 全局样式 */
 .home-page {
+  --section-fade-duration: 1.42s;
+  --section-fade-distance: 86px;
+  --section-fade-blur: 10px;
+  min-height: 100vh;
   font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
   color: #2c3e50;
   background: linear-gradient(135deg, #ffffff 0%, #fafafa 50%, #f5f5f5 100%);
-  min-height: 100vh;
 }
 
-#fullpage {
-  height: 100vh;
+.sections {
+  position: relative;
 }
 
 .section {
-  height: 100vh;
+  position: relative;
+  min-height: 100vh;
   display: flex;
-  flex-direction: column;
-  justify-content: center;
-  transform: translateZ(0); /* 启用GPU加速 */
-  backface-visibility: hidden; /* 优化渲染性能 */
-  perspective: 1000px; /* 启用3D变换优化 */
+  align-items: center;
+  box-sizing: border-box;
+  padding: 160px 0 88px;
+  overflow: hidden;
 }
 
-/* 公共容器 */
 .container {
+  width: 100%;
   max-width: 1140px;
   margin: 0 auto;
   padding: 0 18px;
 }
 
-:deep(.fp-is-overflow .fp-overflow),
-:deep(.fp-is-overflow .fp-overflow.fp-auto-height),
-:deep(.fp-is-overflow .fp-overflow.fp-auto-height-responsive) {
-  overflow: visible !important;
-  max-height: none !important;
+.observe-section .fade-item {
+  --section-shift: var(--section-fade-distance);
+  --section-blur: var(--section-fade-blur);
+  opacity: 0;
+  translate: 0 var(--section-shift);
+  filter: blur(var(--section-blur));
+  transition:
+    opacity var(--section-fade-duration) cubic-bezier(0.16, 1, 0.3, 1) var(--delay, 0s),
+    translate var(--section-fade-duration) cubic-bezier(0.16, 1, 0.3, 1) var(--delay, 0s),
+    filter var(--section-fade-duration) cubic-bezier(0.16, 1, 0.3, 1) var(--delay, 0s);
+  will-change: opacity, translate, filter;
 }
 
-/* 主要内容 */
-.main {
-  padding-top: 80px;
+.observe-section .hero-title.fade-item {
+  transition:
+    opacity var(--section-fade-duration) cubic-bezier(0.16, 1, 0.3, 1) var(--delay, 0s),
+    translate var(--section-fade-duration) cubic-bezier(0.16, 1, 0.3, 1) var(--delay, 0s),
+    filter var(--section-fade-duration) cubic-bezier(0.16, 1, 0.3, 1) var(--delay, 0s),
+    transform 0.3s ease,
+    text-shadow 0.3s ease;
 }
 
-/* 英雄区域 */
+.observe-section .cta-button.fade-item {
+  transition:
+    opacity var(--section-fade-duration) cubic-bezier(0.16, 1, 0.3, 1) var(--delay, 0s),
+    translate var(--section-fade-duration) cubic-bezier(0.16, 1, 0.3, 1) var(--delay, 0s),
+    filter var(--section-fade-duration) cubic-bezier(0.16, 1, 0.3, 1) var(--delay, 0s),
+    transform 0.3s ease,
+    box-shadow 0.3s ease,
+    background 0.3s ease;
+}
+
+.observe-section .post-card.fade-item {
+  transition:
+    opacity var(--section-fade-duration) cubic-bezier(0.16, 1, 0.3, 1) var(--delay, 0s),
+    translate var(--section-fade-duration) cubic-bezier(0.16, 1, 0.3, 1) var(--delay, 0s),
+    filter var(--section-fade-duration) cubic-bezier(0.16, 1, 0.3, 1) var(--delay, 0s),
+    transform 0.32s ease,
+    box-shadow 0.3s ease,
+    border-color 0.3s ease;
+}
+
+.observe-section.is-visible .fade-item {
+  opacity: 1;
+  --section-shift: 0px;
+  --section-blur: 0px;
+}
+
+.observe-section.is-hidden-down .fade-item {
+  opacity: 0;
+  --section-shift: var(--section-fade-distance);
+  --section-blur: var(--section-fade-blur);
+}
+
+.observe-section.is-hidden-up .fade-item {
+  opacity: 0;
+  --section-shift: calc(var(--section-fade-distance) * -1);
+  --section-blur: var(--section-fade-blur);
+}
+
 .hero {
   text-align: center;
-  padding: 100px 0;
-  background: linear-gradient(45deg, rgba(44, 62, 80, 0.03), rgba(44, 62, 80, 0.01));
-  position: relative;
-  overflow: hidden;
+  /* background: #fff; */
 }
 
-.hero::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><defs><pattern id="grid" width="10" height="10" patternUnits="userSpaceOnUse"><path d="M 10 0 L 0 0 0 10" fill="none" stroke="rgba(44,62,80,0.08)" stroke-width="0.5"/></pattern></defs><rect width="100" height="100" fill="url(%23grid)"/></svg>');
-  opacity: 0.4;
-  pointer-events: none;
+.hero-content {
+  position: relative;
+  z-index: 1;
 }
 
 .hero-title {
+  display: inline-block;
+  margin-bottom: 20px;
   font-size: 3rem;
   color: #2c3e50;
-  margin-bottom: 20px;
   text-shadow: 0 2px 4px rgba(44, 62, 80, 0.1);
   transition: transform 0.3s ease, text-shadow 0.3s ease;
   cursor: pointer;
-  position: relative;
-  z-index: 10;
-  display: inline-block;
 }
 
 .hero-title:hover {
@@ -383,21 +556,21 @@ export default {
 }
 
 .hero-subtitle {
+  margin-bottom: 40px;
   font-size: 1.2rem;
   color: #7f8c8d;
-  margin-bottom: 40px;
 }
 
 .cta-button {
-  background: linear-gradient(45deg, #3498db, #2980b9);
-  color: white;
   border: none;
-  padding: 15px 30px;
-  font-size: 1.1rem;
   border-radius: 25px;
+  padding: 15px 30px;
+  background: linear-gradient(45deg, #3498db, #2980b9);
+  color: #ffffff;
+  font-size: 1.1rem;
   cursor: pointer;
-  transition: all 0.3s ease;
   box-shadow: 0 4px 15px rgba(52, 152, 219, 0.3);
+  transition: transform 0.3s ease, box-shadow 0.3s ease, background 0.3s ease;
 }
 
 .cta-button:hover {
@@ -406,18 +579,16 @@ export default {
   background: linear-gradient(45deg, #2980b9, #21618c);
 }
 
-/* 最新文章 */
-
-.latest-posts {
-  padding: 80px 0;
+.latest-posts,
+.about {
   background: transparent;
 }
 
 .section-title {
+  margin-bottom: 50px;
   font-size: 2.5rem;
   color: #2c3e50;
   text-align: center;
-  margin-bottom: 50px;
   text-shadow: 0 0 8px rgba(44, 62, 80, 0.2);
 }
 
@@ -428,90 +599,66 @@ export default {
 }
 
 .post-card {
-  background: rgba(255, 255, 255, 0.95);
   border: 1px solid rgba(189, 195, 199, 0.3);
   border-radius: 12px;
   padding: 25px;
+  background: rgba(255, 255, 255, 0.95);
   backdrop-filter: blur(10px);
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
-  opacity: 0;
-  transform: translateY(50px);
-  transition: opacity 0.8s cubic-bezier(0.25, 0.46, 0.45, 0.94) var(--delay, 0s), transform 0.8s cubic-bezier(0.25, 0.46, 0.45, 0.94) var(--delay, 0s);
-  will-change: transform, opacity;
+  cursor: pointer;
+  transition:
+    transform 0.32s ease,
+    box-shadow 0.3s ease,
+    border-color 0.3s ease;
 }
 
-.post-card.animate-in {
-  opacity: 1;
-  transform: translateY(0);
-  transition: opacity 0.8s cubic-bezier(0.25, 0.46, 0.45, 0.94) var(--delay, 0s), transform 0.8s cubic-bezier(0.25, 0.46, 0.45, 0.94) var(--delay, 0s);
-}
-
-.post-card.animate-in:hover {
+.post-card:hover {
   transform: translateY(-8px);
   box-shadow: 0 12px 40px rgba(0, 0, 0, 0.12);
   border-color: rgba(52, 152, 219, 0.2);
-  transition: transform 0.3s ease 0s, box-shadow 0.3s ease 0s, border-color 0.3s ease 0s;
-  will-change: transform, box-shadow, border-color;
-}
-
-.post-card.mouse-leave:not(:hover) {
-  transform: translateY(0);
-  transition: transform 0.8s ease 0s;
 }
 
 .post-image {
-  height: 150px;
-  background: linear-gradient(45deg, #ecf0f1, #bdc3c7);
-  border-radius: 8px;
-  margin-bottom: 15px;
   position: relative;
+  height: 150px;
+  margin-bottom: 15px;
+  border-radius: 8px;
   overflow: hidden;
+  background: linear-gradient(45deg, #ecf0f1, #bdc3c7);
 }
 
 .post-image::before {
   content: '';
   position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
+  inset: 0;
   background: linear-gradient(45deg, rgba(52, 152, 219, 0.1), rgba(155, 89, 182, 0.1));
 }
 
 .post-card h4 {
-  color: #2c3e50;
   margin-bottom: 10px;
+  color: #2c3e50;
   font-weight: 600;
 }
 
 .post-card p {
-  color: #7f8c8d;
   margin-bottom: 15px;
+  color: #7f8c8d;
   line-height: 1.6;
 }
 
 .read-more {
   color: #3498db;
-  text-decoration: none;
   font-weight: 600;
-  transition: color 0.3s ease;
-}
-
-.read-more:hover {
-  color: #2980b9;
-  text-decoration: underline;
-}
-
-/* 关于我 */
-.about {
-  padding: 80px 0;
-  background: transparent;
 }
 
 .about-content {
   display: flex;
   align-items: center;
   gap: 50px;
+}
+
+.about-text {
+  flex: 1;
 }
 
 .about-text p {
@@ -524,69 +671,52 @@ export default {
 .about-image {
   width: 200px;
   height: 200px;
-  background: #ffffff;
-  border-radius: 50%;
   flex-shrink: 0;
-  position: relative;
+  border-radius: 50%;
   overflow: hidden;
-  z-index: 1;
-  box-shadow: 0 6px 24px rgba(44,62,80,0.10), 0 1.5px 6px rgba(52,152,219,0.10);
-  transition: box-shadow 0.3s cubic-bezier(.25,.8,.25,1);
+  background: #ffffff;
+  box-shadow: 0 6px 24px rgba(44, 62, 80, 0.1), 0 1.5px 6px rgba(52, 152, 219, 0.1);
 }
 
 .about-image-img {
   width: 100%;
   height: 100%;
   object-fit: cover;
-  object-position: right top; /* 调整图片显示部位，60% 40%表示显示图片的顶部右侧 */
+  object-position: right top;
   border-radius: 50%;
 }
 
-/* .about-image::after {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  border-radius: 50%;
-  box-shadow: 0 8px 30px rgba(52, 152, 219, 0.2);
-  z-index: -1; 
-}
-*/
-/* 底部 */
-.footer {
-  background: rgba(44, 62, 80, 0.95);
-  padding: 25px 0;
-  text-align: center;
-  border-top: 1px solid rgba(52, 73, 94, 0.3);
-  color: #ecf0f1;
-}
-
-.footer p {
-  color: #bdc3c7;
-  margin: 0;
-  font-size: 0.9rem;
-}
-
-/* 动画 */
-@keyframes glow {
-  from {
-    text-shadow: 0 0 15px #2c3e50;
+@media (prefers-reduced-motion: reduce) {
+  .observe-section .fade-item,
+  .post-card,
+  .cta-button,
+  .hero-title {
+    transition: none;
   }
-  to {
-    text-shadow: 0 0 25px #2c3e50, 0 0 35px #2c3e50;
+
+  .observe-section .fade-item {
+    opacity: 1;
+    translate: 0 0;
+    filter: none;
   }
 }
 
-/* 响应式设计 */
 @media (max-width: 768px) {
+  .section {
+    padding: 132px 0 64px;
+  }
+
   .hero-title {
     font-size: 2rem;
   }
 
   .hero-subtitle {
     font-size: 1rem;
+  }
+
+  .section-title {
+    margin-bottom: 36px;
+    font-size: 2rem;
   }
 
   .about-content {
