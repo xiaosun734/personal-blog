@@ -259,7 +259,7 @@ export default {
         : 0
 
       let targetIndex = baseIndex
-      if (directionalIndex !== baseIndex && directionalVisibleHeight >= viewportHeight / 3) {
+      if (directionalIndex !== baseIndex && directionalVisibleHeight >= viewportHeight / 4) {
         targetIndex = directionalIndex
       }
 
