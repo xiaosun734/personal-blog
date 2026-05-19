@@ -5,6 +5,8 @@
 </template>
 
 <script>
+import debounce from '../utils/debounce';
+
 export default {
   name: 'BackButton',
   data() {
@@ -14,11 +16,18 @@ export default {
       scrollTimeout: null
     };
   },
+  created() {
+    this.debouncedHandleScroll = debounce(this.handleScroll, 80, { leading: true, trailing: true });
+  },
   mounted() {
-    window.addEventListener('scroll', this.handleScroll);
+    this.lastScrollTop = window.pageYOffset || document.documentElement.scrollTop || 0;
+    window.addEventListener('scroll', this.debouncedHandleScroll, { passive: true });
   },
   beforeDestroy() {
-    window.removeEventListener('scroll', this.handleScroll);
+    window.removeEventListener('scroll', this.debouncedHandleScroll);
+    if (this.debouncedHandleScroll) {
+      this.debouncedHandleScroll.cancel();
+    }
     if (this.scrollTimeout) {
       clearTimeout(this.scrollTimeout);
     }

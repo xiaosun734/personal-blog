@@ -23,6 +23,8 @@
 </template>
 
 <script>
+import debounce from '../utils/debounce'
+
 export default {
   name: 'HeaderComponent',
   data() {
@@ -80,6 +82,9 @@ export default {
       })
     }
   },
+  created() {
+    this.debouncedHandleScroll = debounce(this.handleScroll, 80, { leading: true, trailing: true })
+  },
   mounted() {
     window.addEventListener('resize', this.handleResize)
     this.syncScrollBehavior()
@@ -89,6 +94,9 @@ export default {
   },
   beforeDestroy() {
     this.unbindScrollListener()
+    if (this.debouncedHandleScroll) {
+      this.debouncedHandleScroll.cancel()
+    }
     window.removeEventListener('resize', this.handleResize)
     if (this.navigationTimer) {
       clearTimeout(this.navigationTimer)
@@ -111,15 +119,15 @@ export default {
       this.lastScrollTop = 0
     },
     bindScrollListener() {
-      if (this.isScrollListenerBound) return
+      if (this.isScrollListenerBound || !this.debouncedHandleScroll) return
 
-      window.addEventListener('scroll', this.handleScroll, { passive: true })
+      window.addEventListener('scroll', this.debouncedHandleScroll, { passive: true })
       this.isScrollListenerBound = true
     },
     unbindScrollListener() {
       if (!this.isScrollListenerBound) return
 
-      window.removeEventListener('scroll', this.handleScroll)
+      window.removeEventListener('scroll', this.debouncedHandleScroll)
       this.isScrollListenerBound = false
     },
     handleScroll() {

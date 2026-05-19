@@ -123,6 +123,7 @@
 <script>
 import HeaderComponent from '../components/header-component.vue'
 import BackButton from '../components/back-button.vue'
+import debounce from '../utils/debounce'
 
 export default {
   name: 'PersonalHomepage',
@@ -192,12 +193,15 @@ export default {
       ]
     }
   },
+  created() {
+    this.debouncedHandleSectionScroll = debounce(this.handleSectionScroll, 90)
+  },
   mounted() {
     this.$nextTick(() => {
       this.initSectionObserver()
       this.lastScrollTop = window.pageYOffset || document.documentElement.scrollTop || 0
       this.activeSectionIndex = this.getNearestSectionIndex()
-      window.addEventListener('scroll', this.handleSectionScroll, { passive: true })
+      window.addEventListener('scroll', this.debouncedHandleSectionScroll, { passive: true })
       window.addEventListener('scrollend', this.handleScrollEnd)
       window.addEventListener('resize', this.handleViewportResize)
       window.addEventListener('wheel', this.handleSnapInterrupt, { passive: true })
@@ -206,7 +210,7 @@ export default {
     })
   },
   beforeDestroy() {
-    window.removeEventListener('scroll', this.handleSectionScroll)
+    window.removeEventListener('scroll', this.debouncedHandleSectionScroll)
     window.removeEventListener('scrollend', this.handleScrollEnd)
     window.removeEventListener('resize', this.handleViewportResize)
     window.removeEventListener('wheel', this.handleSnapInterrupt)
@@ -230,6 +234,11 @@ export default {
       cancelAnimationFrame(this.snapAnimationId)
       this.snapAnimationId = null
     }
+
+    if (this.debouncedHandleSectionScroll) {
+      this.debouncedHandleSectionScroll.cancel()
+    }
+
   },
   methods: {
     handleSectionScroll() {
@@ -254,6 +263,10 @@ export default {
       this.queueSectionSnap(36)
     },
     handleScrollEnd() {
+      if (this.debouncedHandleSectionScroll) {
+        this.debouncedHandleSectionScroll.flush()
+      }
+
       if (this.isAutoSnapping) return
       this.queueSectionSnap(0)
     },

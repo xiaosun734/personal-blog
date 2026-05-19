@@ -49,6 +49,8 @@
 </template>
 
 <script>
+import debounce from '../utils/debounce';
+
 export default {
   name: 'PageMagnifier',
   props: {
@@ -107,6 +109,10 @@ export default {
       scrollMotionTimeout: null
     };
   },
+  created() {
+    this.debouncedHandleScrollMotion = debounce(this.handleScrollMotion, 80, { leading: true, trailing: true });
+    this.debouncedSyncSurfaceBounds = debounce(this.syncSurfaceBounds, 80, { leading: true, trailing: true });
+  },
   computed: {
     magnifierOverlayStyle() {
       const clipPath = this.showMagnifierLens
@@ -164,11 +170,17 @@ export default {
   mounted() {
     this.lastScrollTop = window.pageYOffset || document.documentElement.scrollTop || 0;
     this.syncSurfaceBounds();
-    window.addEventListener('scroll', this.handleScrollMotion, { passive: true });
+    window.addEventListener('scroll', this.debouncedHandleScrollMotion, { passive: true });
   },
   beforeDestroy() {
-    window.removeEventListener('scroll', this.handleScrollMotion);
+    window.removeEventListener('scroll', this.debouncedHandleScrollMotion);
     this.removeViewportListeners();
+    if (this.debouncedHandleScrollMotion) {
+      this.debouncedHandleScrollMotion.cancel();
+    }
+    if (this.debouncedSyncSurfaceBounds) {
+      this.debouncedSyncSurfaceBounds.cancel();
+    }
     if (this.scrollMotionTimeout) {
       clearTimeout(this.scrollMotionTimeout);
     }
@@ -239,12 +251,12 @@ export default {
       }, 150);
     },
     addViewportListeners() {
-      window.addEventListener('scroll', this.syncSurfaceBounds, { passive: true });
+      window.addEventListener('scroll', this.debouncedSyncSurfaceBounds, { passive: true });
       window.addEventListener('resize', this.syncSurfaceBounds);
       window.addEventListener('blur', this.handleViewportBlur);
     },
     removeViewportListeners() {
-      window.removeEventListener('scroll', this.syncSurfaceBounds);
+      window.removeEventListener('scroll', this.debouncedSyncSurfaceBounds);
       window.removeEventListener('resize', this.syncSurfaceBounds);
       window.removeEventListener('blur', this.handleViewportBlur);
     }
