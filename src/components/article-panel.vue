@@ -29,16 +29,12 @@
   </main>
 </template>
 
-<script>
-export default {
-  name: 'ArticlePanel',
-  props: {
-    article: {
-      type: Object,
-      default: () => ({})
-    }
-  }
-};
+<script setup lang="ts">
+import type { Article } from '@/types/article'
+
+defineProps<{
+  article: Article
+}>()
 </script>
 
 <style scoped>

@@ -2,12 +2,12 @@
   <div>
     <header class="header" :class="{ 'header-hidden': headerHidden }">
       <div class="container">
-        <router-link to="/" exact class="logo">Sunn</router-link>
-        <nav ref="nav" class="nav" :class="{ 'nav-sliding': isIndicatorAnimating }">
+        <router-link to="/" class="logo">Sunn</router-link>
+        <nav ref="navEl" class="nav" :class="{ 'nav-sliding': isIndicatorAnimating }">
           <button
             v-for="(link, index) in navLinks"
             :key="link.to"
-            ref="navLinks"
+            :ref="(el) => { if (el) navLinkEls[index] = el }"
             type="button"
             class="nav-link"
             :class="{ 'is-active': index === displayNavIndex }"
@@ -22,190 +22,205 @@
   </div>
 </template>
 
-<script>
-import debounce from '../utils/debounce'
+<script setup lang="ts">
+import { ref, computed, watch, onMounted, onBeforeUnmount, nextTick } from 'vue'
+import { useRouter, useRoute } from 'vue-router'
+import debounce from '@/utils/debounce'
 
-export default {
-  name: 'HeaderComponent',
-  data() {
-    return {
-      headerHidden: false,
-      lastScrollTop: 0,
-      scrollThreshold: 72,
-      indicatorWidth: 0,
-      indicatorOffset: 0,
-      indicatorReady: false,
-      pendingNavIndex: null,
-      disableIndicatorTransition: true,
-      navigationTimer: null,
-      animationTimer: null,
-      isIndicatorAnimating: false,
-      isScrollListenerBound: false
-    }
-  },
-  computed: {
-    navLinks() {
-      return [
-        { label: '首页', to: '/', matches: ['Home'] },
-        { label: '关于', to: '/personal', matches: ['PersonalHomepage'] },
-        { label: '博客', to: '/text-homepage', matches: ['TextHomePage', 'ClassificationPage', 'TextRead'] }
-      ]
-    },
-    activeNavIndex() {
-      const index = this.navLinks.findIndex(link => link.matches.includes(this.$route.name))
-      return index === -1 ? 0 : index
-    },
-    displayNavIndex() {
-      return this.pendingNavIndex === null ? this.activeNavIndex : this.pendingNavIndex
-    },
-    navIndicatorStyle() {
-      return {
-        width: `${this.indicatorWidth}px`,
-        transform: `translateX(${this.indicatorOffset}px)`,
-        opacity: this.indicatorReady ? 1 : 0,
-        transition: this.disableIndicatorTransition
-          ? 'none'
-          : 'transform 0.52s cubic-bezier(0.22, 1, 0.36, 1), width 0.52s cubic-bezier(0.22, 1, 0.36, 1), opacity 0.22s ease'
-      }
-    },
-    shouldHideOnScroll() {
-      const hidePages = ['TextHomePage', 'ClassificationPage', 'TextRead']
-      return hidePages.includes(this.$route.name)
-    }
-  },
-  watch: {
-    $route() {
-      this.pendingNavIndex = null
-      this.syncScrollBehavior()
-      this.$nextTick(() => {
-        this.updateIndicator(this.activeNavIndex, true)
-      })
-    }
-  },
-  created() {
-    this.debouncedHandleScroll = debounce(this.handleScroll, 80, { leading: true, trailing: true })
-  },
-  mounted() {
-    window.addEventListener('resize', this.handleResize)
-    this.syncScrollBehavior()
-    this.$nextTick(() => {
-      this.updateIndicator(this.activeNavIndex, true)
+interface NavLink {
+  label: string
+  to: string
+  matches: string[]
+}
+
+const router = useRouter()
+const route = useRoute()
+
+// Template refs
+const navEl = ref<HTMLElement | null>(null)
+const navLinkEls: any[] = []
+
+// State
+const headerHidden = ref(false)
+const lastScrollTop = ref(0)
+const scrollThreshold = 72
+const indicatorWidth = ref(0)
+const indicatorOffset = ref(0)
+const indicatorReady = ref(false)
+const pendingNavIndex = ref<number | null>(null)
+const disableIndicatorTransition = ref(true)
+let navigationTimer: ReturnType<typeof setTimeout> | null = null
+let animationTimer: ReturnType<typeof setTimeout> | null = null
+const isIndicatorAnimating = ref(false)
+let isScrollListenerBound = false
+
+// Nav links (static)
+const navLinks: NavLink[] = [
+  { label: '首页', to: '/', matches: ['Home'] },
+  { label: '关于', to: '/personal', matches: ['PersonalHomepage'] },
+  { label: '博客', to: '/text-homepage', matches: ['TextHomePage', 'ClassificationPage', 'TextRead'] }
+]
+
+// Computed
+const activeNavIndex = computed(() => {
+  const index = navLinks.findIndex(link => link.matches.includes(route.name as string))
+  return index === -1 ? 0 : index
+})
+
+const displayNavIndex = computed(() => {
+  return pendingNavIndex.value === null ? activeNavIndex.value : pendingNavIndex.value
+})
+
+const navIndicatorStyle = computed(() => ({
+  width: `${indicatorWidth.value}px`,
+  transform: `translateX(${indicatorOffset.value}px)`,
+  opacity: indicatorReady.value ? 1 : 0,
+  transition: disableIndicatorTransition.value
+    ? 'none'
+    : 'transform 0.52s cubic-bezier(0.22, 1, 0.36, 1), width 0.52s cubic-bezier(0.22, 1, 0.36, 1), opacity 0.22s ease'
+}))
+
+const shouldHideOnScroll = computed(() => {
+  const hidePages = ['TextHomePage', 'ClassificationPage', 'TextRead']
+  return hidePages.includes(route.name as string)
+})
+
+// Methods
+const bindScrollListener = () => {
+  if (isScrollListenerBound || !debouncedHandleScroll) return
+  window.addEventListener('scroll', debouncedHandleScroll, { passive: true })
+  isScrollListenerBound = true
+}
+
+const unbindScrollListener = () => {
+  if (!isScrollListenerBound) return
+  window.removeEventListener('scroll', debouncedHandleScroll)
+  isScrollListenerBound = false
+}
+
+const handleScroll = () => {
+  if (!shouldHideOnScroll.value) return
+
+  const scrollTop = window.pageYOffset || document.documentElement.scrollTop || 0
+
+  if (scrollTop > lastScrollTop.value && scrollTop > scrollThreshold) {
+    headerHidden.value = true
+  } else {
+    headerHidden.value = false
+  }
+
+  lastScrollTop.value = scrollTop
+}
+
+const handleResize = () => {
+  updateIndicator(displayNavIndex.value, true)
+}
+
+const getNavLinkElement = (index: number): HTMLElement | null => {
+  return (navLinkEls[index] as unknown as HTMLElement) || null
+}
+
+const updateIndicator = (index: number = displayNavIndex.value, immediate = false) => {
+  const activeLinkElement = getNavLinkElement(index)
+
+  if (!activeLinkElement || !navEl.value) {
+    indicatorReady.value = false
+    return
+  }
+
+  disableIndicatorTransition.value = immediate
+  indicatorWidth.value = activeLinkElement.offsetWidth
+  indicatorOffset.value = activeLinkElement.offsetLeft
+  indicatorReady.value = true
+
+  if (immediate) {
+    requestAnimationFrame(() => {
+      disableIndicatorTransition.value = false
     })
-  },
-  beforeDestroy() {
-    this.unbindScrollListener()
-    if (this.debouncedHandleScroll) {
-      this.debouncedHandleScroll.cancel()
-    }
-    window.removeEventListener('resize', this.handleResize)
-    if (this.navigationTimer) {
-      clearTimeout(this.navigationTimer)
-    }
-    if (this.animationTimer) {
-      clearTimeout(this.animationTimer)
-    }
-  },
-  methods: {
-    syncScrollBehavior() {
-      if (this.shouldHideOnScroll) {
-        this.bindScrollListener()
-        this.lastScrollTop = window.pageYOffset || document.documentElement.scrollTop || 0
-        this.handleScroll()
-        return
-      }
-
-      this.unbindScrollListener()
-      this.headerHidden = false
-      this.lastScrollTop = 0
-    },
-    bindScrollListener() {
-      if (this.isScrollListenerBound || !this.debouncedHandleScroll) return
-
-      window.addEventListener('scroll', this.debouncedHandleScroll, { passive: true })
-      this.isScrollListenerBound = true
-    },
-    unbindScrollListener() {
-      if (!this.isScrollListenerBound) return
-
-      window.removeEventListener('scroll', this.debouncedHandleScroll)
-      this.isScrollListenerBound = false
-    },
-    handleScroll() {
-      if (!this.shouldHideOnScroll) return
-
-      const scrollTop = window.pageYOffset || document.documentElement.scrollTop || 0
-
-      if (scrollTop > this.lastScrollTop && scrollTop > this.scrollThreshold) {
-        this.headerHidden = true
-      } else {
-        this.headerHidden = false
-      }
-
-      this.lastScrollTop = scrollTop
-    },
-    handleResize() {
-      this.updateIndicator(this.displayNavIndex, true)
-    },
-    getNavLinkElement(index) {
-      const navLinks = this.$refs.navLinks
-      const linkList = Array.isArray(navLinks) ? navLinks : [navLinks]
-      return linkList[index] || null
-    },
-    updateIndicator(index = this.displayNavIndex, immediate = false) {
-      const activeLinkElement = this.getNavLinkElement(index)
-
-      if (!activeLinkElement || !this.$refs.nav) {
-        this.indicatorReady = false
-        return
-      }
-
-      this.disableIndicatorTransition = immediate
-      this.indicatorWidth = activeLinkElement.offsetWidth
-      this.indicatorOffset = activeLinkElement.offsetLeft
-      this.indicatorReady = true
-
-      if (immediate) {
-        requestAnimationFrame(() => {
-          this.disableIndicatorTransition = false
-        })
-      }
-    },
-    triggerIndicatorAnimation() {
-      this.isIndicatorAnimating = false
-
-      requestAnimationFrame(() => {
-        this.isIndicatorAnimating = true
-      })
-
-      if (this.animationTimer) {
-        clearTimeout(this.animationTimer)
-      }
-
-      this.animationTimer = setTimeout(() => {
-        this.isIndicatorAnimating = false
-        this.animationTimer = null
-      }, 520)
-    },
-    handleNavClick(link, index) {
-      if (index === this.activeNavIndex && this.$route.path === link.to) {
-        return
-      }
-
-      this.pendingNavIndex = index
-      this.triggerIndicatorAnimation()
-      this.updateIndicator(index)
-
-      if (this.navigationTimer) {
-        clearTimeout(this.navigationTimer)
-      }
-
-      this.navigationTimer = setTimeout(() => {
-        this.$router.push(link.to)
-        this.navigationTimer = null
-      }, 220)
-    }
   }
 }
+
+const triggerIndicatorAnimation = () => {
+  isIndicatorAnimating.value = false
+
+  requestAnimationFrame(() => {
+    isIndicatorAnimating.value = true
+  })
+
+  if (animationTimer) {
+    clearTimeout(animationTimer)
+  }
+
+  animationTimer = setTimeout(() => {
+    isIndicatorAnimating.value = false
+    animationTimer = null
+  }, 520)
+}
+
+const syncScrollBehavior = () => {
+  if (shouldHideOnScroll.value) {
+    bindScrollListener()
+    lastScrollTop.value = window.pageYOffset || document.documentElement.scrollTop || 0
+    handleScroll()
+    return
+  }
+
+  unbindScrollListener()
+  headerHidden.value = false
+  lastScrollTop.value = 0
+}
+
+const handleNavClick = (link: NavLink, index: number) => {
+  if (index === activeNavIndex.value && route.path === link.to) {
+    return
+  }
+
+  pendingNavIndex.value = index
+  triggerIndicatorAnimation()
+  updateIndicator(index)
+
+  if (navigationTimer) {
+    clearTimeout(navigationTimer)
+  }
+
+  navigationTimer = setTimeout(() => {
+    router.push(link.to)
+    navigationTimer = null
+  }, 220)
+}
+
+// Debounced scroll handler
+const debouncedHandleScroll = debounce(handleScroll, 80, { leading: true, trailing: true })
+
+// Watch route changes
+watch(() => route.name, () => {
+  pendingNavIndex.value = null
+  syncScrollBehavior()
+  nextTick(() => {
+    updateIndicator(activeNavIndex.value, true)
+  })
+})
+
+// Lifecycle
+onMounted(() => {
+  window.addEventListener('resize', handleResize)
+  syncScrollBehavior()
+  nextTick(() => {
+    updateIndicator(activeNavIndex.value, true)
+  })
+})
+
+onBeforeUnmount(() => {
+  unbindScrollListener()
+  debouncedHandleScroll.cancel()
+  window.removeEventListener('resize', handleResize)
+  if (navigationTimer) {
+    clearTimeout(navigationTimer)
+  }
+  if (animationTimer) {
+    clearTimeout(animationTimer)
+  }
+})
 </script>
 
 <style scoped>
@@ -307,9 +322,7 @@ export default {
   color: #1f3246;
 }
 
-.nav-link:hover {
-  transform: translateY(-1px);
-}
+
 
 .nav-indicator {
   position: absolute;

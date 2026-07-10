@@ -4,59 +4,52 @@
   </button>
 </template>
 
-<script>
-import debounce from '../utils/debounce';
+<script setup lang="ts">
+import { ref, onMounted, onBeforeUnmount } from 'vue'
+import { useRouter } from 'vue-router'
+import debounce from '@/utils/debounce'
 
-export default {
-  name: 'BackButton',
-  data() {
-    return {
-      translateY: 0,
-      lastScrollTop: 0,
-      scrollTimeout: null
-    };
-  },
-  created() {
-    this.debouncedHandleScroll = debounce(this.handleScroll, 80, { leading: true, trailing: true });
-  },
-  mounted() {
-    this.lastScrollTop = window.pageYOffset || document.documentElement.scrollTop || 0;
-    window.addEventListener('scroll', this.debouncedHandleScroll, { passive: true });
-  },
-  beforeDestroy() {
-    window.removeEventListener('scroll', this.debouncedHandleScroll);
-    if (this.debouncedHandleScroll) {
-      this.debouncedHandleScroll.cancel();
-    }
-    if (this.scrollTimeout) {
-      clearTimeout(this.scrollTimeout);
-    }
-  },
-  methods: {
-    goBack() {
-      this.$router.back();
-    },
-    handleScroll() {
-      const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
-      const scrollDelta = scrollTop - this.lastScrollTop;
-      
-      // 计算新的位置，限制在-10px到10px之间
-      this.translateY = Math.max(Math.min(this.translateY + scrollDelta * 0.2, 10), -10);
-      
-      this.lastScrollTop = scrollTop;
-      
-      // 清除之前的定时器
-      if (this.scrollTimeout) {
-        clearTimeout(this.scrollTimeout);
-      }
-      
-      // 设置新的定时器，当滚动停止后恢复原位
-      this.scrollTimeout = setTimeout(() => {
-        this.translateY = 0;
-      }, 150);
-    }
+const router = useRouter()
+
+const translateY = ref(0)
+const lastScrollTop = ref(0)
+let scrollTimeout: ReturnType<typeof setTimeout> | null = null
+
+const goBack = () => {
+  router.back()
+}
+
+const handleScroll = () => {
+  const scrollTop = window.pageYOffset || document.documentElement.scrollTop
+  const scrollDelta = scrollTop - lastScrollTop.value
+
+  translateY.value = Math.max(Math.min(translateY.value + scrollDelta * 0.2, 10), -10)
+
+  lastScrollTop.value = scrollTop
+
+  if (scrollTimeout) {
+    clearTimeout(scrollTimeout)
   }
-};
+
+  scrollTimeout = setTimeout(() => {
+    translateY.value = 0
+  }, 150)
+}
+
+const debouncedHandleScroll = debounce(handleScroll, 80, { leading: true, trailing: true })
+
+onMounted(() => {
+  lastScrollTop.value = window.pageYOffset || document.documentElement.scrollTop || 0
+  window.addEventListener('scroll', debouncedHandleScroll, { passive: true })
+})
+
+onBeforeUnmount(() => {
+  window.removeEventListener('scroll', debouncedHandleScroll)
+  debouncedHandleScroll.cancel()
+  if (scrollTimeout) {
+    clearTimeout(scrollTimeout)
+  }
+})
 </script>
 
 <style scoped>

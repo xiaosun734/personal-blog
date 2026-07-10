@@ -12,7 +12,7 @@
       <section class="articles">
         <h2>全部文章</h2>
         <ul class="article-list">
-          <li class="article-item" v-for="item in articles" :key="item.id">
+          <li class="article-item" v-for="item in articleList" :key="item.id">
             <router-link :to="{ name: 'TextRead', params: { id: item.id } }">
               <h3>{{ item.title }}</h3>
               <p>{{ item.desc }}</p>
@@ -27,29 +27,19 @@
   </div>
 </template>
 
-<script>
+<script setup lang="ts">
+import { ref, onMounted } from 'vue'
 import HeaderComponent from '../components/header-component.vue'
 import ClassificationComponent from '../components/classification-component.vue'
 import BackButton from '../components/back-button.vue'
-import articles from '../data/articles'
+import articles from '@/data/articles'
+import type { Article } from '@/types/article'
 
-export default {
-  name: 'TextHomepage',
-  components: {
-    HeaderComponent,
-    ClassificationComponent,
-    BackButton,
-  },
-  data() {
-    return {
-      articles: [],
-    }
-  },
-  mounted() {
-    this.articles = articles
-      .sort((a, b) => b.id - a.id); // 按id降序排序，使最新的文章在前面
-  }
-}
+const articleList = ref<Article[]>([])
+
+onMounted(() => {
+  articleList.value = [...articles].sort((a, b) => b.id - a.id)
+})
 </script>
 
 <style scoped>

@@ -1,5 +1,5 @@
 <template>
-  <div class="personal-homepage">
+  <div ref="rootEl" class="personal-homepage">
     <BackButton />
     <HeaderComponent />
 
@@ -120,354 +120,131 @@
   </div>
 </template>
 
-<script>
+<script setup lang="ts">
+import { ref, onBeforeUnmount } from 'vue'
 import HeaderComponent from '../components/header-component.vue'
 import BackButton from '../components/back-button.vue'
-import debounce from '../utils/debounce'
+import { useSectionSnap } from '@/composables/useSectionSnap'
 
-export default {
-  name: 'PersonalHomepage',
-  components: {
-    HeaderComponent,
-    BackButton
+interface TagBox {
+  label: string
+  x: string
+  y: string
+  targetX: string
+  targetY: string
+}
+
+interface FriendLink {
+  name: string
+  url: string
+  description: string
+}
+
+// Root element ref for section snap
+const rootEl = ref<HTMLElement | null>(null)
+
+// Section snap (handles scroll + visibility + snap internally, snapDenominator=3)
+const { sectionStates } = useSectionSnap(rootEl, ['profile', 'contact', 'links'], 3)
+
+// QR code
+const showQR = ref(false)
+const qrPosition = ref({ x: 0, y: 0 })
+const qrCodeSrc = ref('')
+const qrCodeTitle = ref('')
+
+// Friend links
+const friendLinks: FriendLink[] = [
+  {
+    name: 'Vue.js',
+    url: 'https://vuejs.org/',
+    description: '渐进式 JavaScript 框架'
   },
-  data() {
-    return {
-      showQR: false,
-      qrPosition: { x: 0, y: 0 },
-      qrCodeSrc: '',
-      qrCodeTitle: '',
-      observer: null,
-      snapTimer: null,
-      snapAnimationId: null,
-      isAutoSnapping: false,
-      lastScrollTop: 0,
-      scrollDirection: 'down',
-      activeSectionIndex: 0,
-      sectionStates: {
-        profile: 'is-hidden-down',
-        contact: 'is-hidden-down',
-        links: 'is-hidden-down'
-      },
-      friendLinks: [
-        {
-          name: 'Vue.js',
-          url: 'https://vuejs.org/',
-          description: '渐进式 JavaScript 框架'
-        },
-        {
-          name: 'React',
-          url: 'https://react.dev/',
-          description: '用于构建用户界面的 JavaScript 库'
-        },
-        {
-          name: 'Node.js',
-          url: 'https://nodejs.org/',
-          description: '基于 Chrome V8 引擎的 JavaScript 运行时'
-        },
-        {
-          name: 'GitHub',
-          url: 'https://github.com/',
-          description: '面向开源与私有项目的协作平台'
-        },
-        {
-          name: 'MDN Web Docs',
-          url: 'https://developer.mozilla.org/',
-          description: '常用的 Web 开发技术文档'
-        },
-        {
-          name: 'Stack Overflow',
-          url: 'https://stackoverflow.com/',
-          description: '程序员问答社区'
-        }
-      ],
-      showTags: false,
-      isProfileHovered: false,
-      hoverDebounceTimer: null,
-      tagBoxes: [
-        { label: '雅思托福没考', x: '50%', y: '50%', targetX: '10%', targetY: '30%' },
-        { label: '国家级证件持有者', x: '50%', y: '50%', targetX: '80%', targetY: '40%' },
-        { label: '华裔华人', x: '50%', y: '50%', targetX: '15%', targetY: '70%' },
-        { label: '蜜雪冰城品鉴师', x: '50%', y: '50%', targetX: '75%', targetY: '60%' },
-        { label: '诺贝尔奖观赛者', x: '50%', y: '50%', targetX: '45%', targetY: '0%' }
-      ]
-    }
+  {
+    name: 'React',
+    url: 'https://react.dev/',
+    description: '用于构建用户界面的 JavaScript 库'
   },
-  created() {
-    this.debouncedHandleSectionScroll = debounce(this.handleSectionScroll, 90)
+  {
+    name: 'Node.js',
+    url: 'https://nodejs.org/',
+    description: '基于 Chrome V8 引擎的 JavaScript 运行时'
   },
-  mounted() {
-    this.$nextTick(() => {
-      this.initSectionObserver()
-      this.lastScrollTop = window.pageYOffset || document.documentElement.scrollTop || 0
-      this.activeSectionIndex = this.getNearestSectionIndex()
-      window.addEventListener('scroll', this.debouncedHandleSectionScroll, { passive: true })
-      window.addEventListener('scrollend', this.handleScrollEnd)
-      window.addEventListener('resize', this.handleViewportResize)
-      window.addEventListener('wheel', this.handleSnapInterrupt, { passive: true })
-      window.addEventListener('touchstart', this.handleSnapInterrupt, { passive: true })
-      this.queueSectionSnap(48)
-    })
+  {
+    name: 'GitHub',
+    url: 'https://github.com/',
+    description: '面向开源与私有项目的协作平台'
   },
-  beforeDestroy() {
-    window.removeEventListener('scroll', this.debouncedHandleSectionScroll)
-    window.removeEventListener('scrollend', this.handleScrollEnd)
-    window.removeEventListener('resize', this.handleViewportResize)
-    window.removeEventListener('wheel', this.handleSnapInterrupt)
-    window.removeEventListener('touchstart', this.handleSnapInterrupt)
-
-    if (this.hoverDebounceTimer) {
-      clearTimeout(this.hoverDebounceTimer)
-    }
-
-    if (this.observer) {
-      this.observer.disconnect()
-      this.observer = null
-    }
-
-    if (this.snapTimer) {
-      clearTimeout(this.snapTimer)
-      this.snapTimer = null
-    }
-
-    if (this.snapAnimationId) {
-      cancelAnimationFrame(this.snapAnimationId)
-      this.snapAnimationId = null
-    }
-
-    if (this.debouncedHandleSectionScroll) {
-      this.debouncedHandleSectionScroll.cancel()
-    }
-
+  {
+    name: 'MDN Web Docs',
+    url: 'https://developer.mozilla.org/',
+    description: '常用的 Web 开发技术文档'
   },
-  methods: {
-    handleSectionScroll() {
-      const currentScrollTop = window.pageYOffset || document.documentElement.scrollTop || 0
-      if (currentScrollTop > this.lastScrollTop + 1) {
-        this.scrollDirection = 'down'
-      } else if (currentScrollTop < this.lastScrollTop - 1) {
-        this.scrollDirection = 'up'
-      }
-      this.lastScrollTop = currentScrollTop
+  {
+    name: 'Stack Overflow',
+    url: 'https://stackoverflow.com/',
+    description: '程序员问答社区'
+  }
+]
 
-      this.updateSectionViewportStates()
+// Profile tag boxes
+const showTags = ref(false)
+const isProfileHovered = ref(false)
+let hoverDebounceTimer: ReturnType<typeof setTimeout> | null = null
 
-      if (this.isAutoSnapping) return
-      this.queueSectionSnap()
-    },
-    handleViewportResize() {
-      this.updateSectionViewportStates()
+const tagBoxes: TagBox[] = [
+  { label: '雅思托福没考', x: '50%', y: '50%', targetX: '10%', targetY: '30%' },
+  { label: '国家级证件持有者', x: '50%', y: '50%', targetX: '80%', targetY: '40%' },
+  { label: '华裔华人', x: '50%', y: '50%', targetX: '15%', targetY: '70%' },
+  { label: '蜜雪冰城品鉴师', x: '50%', y: '50%', targetX: '75%', targetY: '60%' },
+  { label: '诺贝尔奖观赛者', x: '50%', y: '50%', targetX: '45%', targetY: '0%' }
+]
 
-      if (this.isAutoSnapping) return
-      this.activeSectionIndex = this.getNearestSectionIndex()
-      this.queueSectionSnap(36)
-    },
-    handleScrollEnd() {
-      if (this.debouncedHandleSectionScroll) {
-        this.debouncedHandleSectionScroll.flush()
-      }
+const showTagBoxes = () => {
+  if (hoverDebounceTimer) {
+    clearTimeout(hoverDebounceTimer)
+  }
 
-      if (this.isAutoSnapping) return
-      this.queueSectionSnap(0)
-    },
-    handleSnapInterrupt() {
-      if (!this.isAutoSnapping) return
-      this.cancelAutoSnap()
-    },
-    queueSectionSnap(delay = 18) {
-      if (this.snapTimer) {
-        clearTimeout(this.snapTimer)
-      }
+  hoverDebounceTimer = setTimeout(() => {
+    showTags.value = true
+    isProfileHovered.value = true
+  }, 100)
+}
 
-      const runSnap = () => {
-        this.snapTimer = null
-        this.snapToDirectionalSection()
-      }
+const hideTagBoxes = () => {
+  if (hoverDebounceTimer) {
+    clearTimeout(hoverDebounceTimer)
+  }
 
-      if (delay <= 0) {
-        runSnap()
-        return
-      }
+  hoverDebounceTimer = setTimeout(() => {
+    showTags.value = false
+    isProfileHovered.value = false
+  }, 200)
+}
 
-      this.snapTimer = setTimeout(runSnap, delay)
-    },
-    getSectionElements() {
-      return Array.from(this.$el.querySelectorAll('.observe-section'))
-    },
-    getSectionMetrics() {
-      return this.getSectionElements().map((section, index) => ({
-        index,
-        section,
-        rect: section.getBoundingClientRect()
-      }))
-    },
-    getVisibleHeight(rect, viewportHeight = window.innerHeight || document.documentElement.clientHeight) {
-      const visibleTop = Math.max(rect.top, 0)
-      const visibleBottom = Math.min(rect.bottom, viewportHeight)
-      return Math.max(0, visibleBottom - visibleTop)
-    },
-    getNearestSectionIndex(metrics = this.getSectionMetrics()) {
-      if (!metrics.length) return 0
+const showQRCode = (type: string) => {
+  showQR.value = true
 
-      let nearestIndex = 0
-      let nearestDistance = Number.POSITIVE_INFINITY
-
-      metrics.forEach((item) => {
-        const distance = Math.abs(item.rect.top)
-        if (distance < nearestDistance) {
-          nearestDistance = distance
-          nearestIndex = item.index
-        }
-      })
-
-      return nearestIndex
-    },
-    snapToDirectionalSection() {
-      const metrics = this.getSectionMetrics()
-      if (!metrics.length) return
-
-      const viewportHeight = window.innerHeight || document.documentElement.clientHeight
-      const currentScrollTop = window.pageYOffset || document.documentElement.scrollTop || 0
-      const nearestIndex = this.getNearestSectionIndex(metrics)
-
-      if (
-        this.activeSectionIndex < 0 ||
-        this.activeSectionIndex >= metrics.length ||
-        Math.abs(this.activeSectionIndex - nearestIndex) > 1 ||
-        this.getVisibleHeight(metrics[this.activeSectionIndex].rect, viewportHeight) === 0
-      ) {
-        this.activeSectionIndex = nearestIndex
-      }
-
-      const baseIndex = this.activeSectionIndex
-      const directionalIndex = this.scrollDirection === 'up'
-        ? Math.max(0, baseIndex - 1)
-        : Math.min(metrics.length - 1, baseIndex + 1)
-      const directionalSection = metrics[directionalIndex]
-      const directionalVisibleHeight = directionalSection
-        ? this.getVisibleHeight(directionalSection.rect, viewportHeight)
-        : 0
-
-      let targetIndex = baseIndex
-      if (directionalIndex !== baseIndex && directionalVisibleHeight >= viewportHeight / 3) {
-        targetIndex = directionalIndex
-      }
-
-      const targetMetric = metrics[targetIndex]
-      const targetScrollTop = Math.max(0, currentScrollTop + targetMetric.rect.top)
-
-      if (Math.abs(targetScrollTop - currentScrollTop) < 4) {
-        this.activeSectionIndex = targetIndex
-        return
-      }
-
-      this.animateSectionSnap(targetScrollTop, targetIndex)
-    },
-    animateSectionSnap(targetScrollTop, targetIndex) {
-      this.cancelAutoSnap()
-
-      const startScrollTop = window.pageYOffset || document.documentElement.scrollTop || 0
-      const distance = targetScrollTop - startScrollTop
-      const duration = Math.max(420, Math.min(760, Math.abs(distance) * 0.52))
-      const startTime = performance.now()
-
-      this.isAutoSnapping = true
-
-      const step = (now) => {
-        const progress = Math.min(1, (now - startTime) / duration)
-        const eased = progress < 0.5
-          ? 4 * progress * progress * progress
-          : 1 - Math.pow(-2 * progress + 2, 3) / 2
-
-        window.scrollTo(0, startScrollTop + distance * eased)
-        this.updateSectionViewportStates()
-
-        if (progress < 1 && this.isAutoSnapping) {
-          this.snapAnimationId = requestAnimationFrame(step)
-          return
-        }
-
-        this.snapAnimationId = null
-        this.isAutoSnapping = false
-        this.activeSectionIndex = targetIndex
-        this.lastScrollTop = window.pageYOffset || document.documentElement.scrollTop || targetScrollTop
-      }
-
-      this.snapAnimationId = requestAnimationFrame(step)
-    },
-    cancelAutoSnap() {
-      if (this.snapAnimationId) {
-        cancelAnimationFrame(this.snapAnimationId)
-        this.snapAnimationId = null
-      }
-
-      this.isAutoSnapping = false
-    },
-    initSectionObserver() {
-      this.updateSectionViewportStates()
-    },
-    updateSectionViewportStates() {
-      const sections = this.getSectionElements()
-      if (!sections.length) return
-
-      const viewportHeight = window.innerHeight || document.documentElement.clientHeight
-      const visibleBandTop = viewportHeight * 0.24
-      const visibleBandBottom = viewportHeight * 0.76
-
-      sections.forEach((section) => {
-        const { sectionId } = section.dataset
-        if (!sectionId) return
-
-        const rect = section.getBoundingClientRect()
-        const centerY = rect.top + rect.height / 2
-        let nextState = 'is-visible'
-
-        if (centerY < visibleBandTop) {
-          nextState = 'is-hidden-up'
-        } else if (centerY > visibleBandBottom) {
-          nextState = 'is-hidden-down'
-        }
-
-        this.$set(this.sectionStates, sectionId, nextState)
-      })
-    },
-    showTagBoxes() {
-      if (this.hoverDebounceTimer) {
-        clearTimeout(this.hoverDebounceTimer)
-      }
-
-      this.hoverDebounceTimer = setTimeout(() => {
-        this.showTags = true
-        this.isProfileHovered = true
-      }, 100)
-    },
-    hideTagBoxes() {
-      if (this.hoverDebounceTimer) {
-        clearTimeout(this.hoverDebounceTimer)
-      }
-
-      this.hoverDebounceTimer = setTimeout(() => {
-        this.showTags = false
-        this.isProfileHovered = false
-      }, 200)
-    },
-    showQRCode(type) {
-      this.showQR = true
-
-      if (type === 'qq') {
-        this.qrCodeSrc = 'https://cdn.imgos.cn/vip/2026/04/14/69ddb17876def.png'
-        this.qrCodeTitle = 'QQ 二维码'
-      }
-    },
-    hideQRCode() {
-      this.showQR = false
-    },
-    moveQRCode(event) {
-      this.qrPosition.x = event.clientX + 10
-      this.qrPosition.y = event.clientY + 10
-    }
+  if (type === 'qq') {
+    qrCodeSrc.value = 'https://cdn.imgos.cn/vip/2026/04/14/69ddb17876def.png'
+    qrCodeTitle.value = 'QQ 二维码'
   }
 }
+
+const hideQRCode = () => {
+  showQR.value = false
+}
+
+const moveQRCode = (event: MouseEvent) => {
+  qrPosition.value.x = event.clientX + 10
+  qrPosition.value.y = event.clientY + 10
+}
+
+// Cleanup
+onBeforeUnmount(() => {
+  if (hoverDebounceTimer) {
+    clearTimeout(hoverDebounceTimer)
+  }
+})
 </script>
 
 <style scoped>

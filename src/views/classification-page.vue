@@ -30,49 +30,39 @@
   </div>
 </template>
 
-<script>
-import articles from '../data/articles.js';
-import ClassificationComponent from '../components/classification-component.vue';
+<script setup lang="ts">
+import { ref, computed, watch, onMounted } from 'vue'
+import { useRouter, useRoute } from 'vue-router'
+import articles from '@/data/articles'
+import type { Article } from '@/types/article'
+import ClassificationComponent from '../components/classification-component.vue'
 import BackButton from '../components/back-button.vue'
-import HeaderComponent from '../components/header-component.vue';
+import HeaderComponent from '../components/header-component.vue'
 
-export default {
-  name: 'ClassificationPage',
-  components: {
-    ClassificationComponent,
-    HeaderComponent,
-    BackButton
-  },
-  data() {
-    return {
-      currentCategory: '',
-      articles: articles
-    };
-  },
-  computed: {
-    filteredArticles() {
-      if (!this.currentCategory) {
-        return this.articles;
-      }
-      return this.articles.filter(article => article.category === this.currentCategory);
-    }
-  },
-  mounted() {
-    // 从路由参数中获取分类名称
-    this.currentCategory = this.$route.params.category || '';
-  },
-  watch: {
-    // 监听路由变化，更新当前分类
-    '$route.params.category': function(newCategory) {
-      this.currentCategory = newCategory || '';
-    }
-  },
-  methods: {
-    navigateToArticle(id) {
-      this.$router.push(`/article/${id}`);
-    }
+const router = useRouter()
+const route = useRoute()
+
+const currentCategory = ref('')
+const allArticles = ref<Article[]>(articles)
+
+const filteredArticles = computed(() => {
+  if (!currentCategory.value) {
+    return allArticles.value
   }
-};
+  return allArticles.value.filter(article => article.category === currentCategory.value)
+})
+
+const navigateToArticle = (id: number) => {
+  router.push(`/article/${id}`)
+}
+
+onMounted(() => {
+  currentCategory.value = (route.params.category as string) || ''
+})
+
+watch(() => route.params.category, (newCategory) => {
+  currentCategory.value = (newCategory as string) || ''
+})
 </script>
 
 <style scoped>

@@ -1,5 +1,5 @@
 <template>
-  <div class="home-page">
+  <div ref="rootEl" class="home-page">
     <HeaderComponent />
 
     <main class="sections">
@@ -76,378 +76,162 @@
   </div>
 </template>
 
-<script>
+<script setup lang="ts">
+import { ref, onBeforeUnmount } from 'vue'
+import { useRouter } from 'vue-router'
 import HeaderComponent from '../components/header-component.vue'
-import articles from '../data/articles'
-import debounce from '../utils/debounce'
+import articles from '@/data/articles'
+import type { Article } from '@/types/article'
+import { useSectionSnap } from '@/composables/useSectionSnap'
 
-export default {
-  name: 'HomePage',
-  components: {
-    HeaderComponent
-  },
-  data() {
-    return {
-      posts: [],
-      cardStates: {},
-      colorSchemes: [
-        { start: { r: 52, g: 152, b: 219 }, end: { r: 155, g: 89, b: 182 } },
-        { start: { r: 46, g: 204, b: 113 }, end: { r: 52, g: 152, b: 219 } },
-        { start: { r: 231, g: 76, b: 60 }, end: { r: 241, g: 196, b: 15 } }
-      ],
-      observer: null,
-      snapTimer: null,
-      snapAnimationId: null,
-      isAutoSnapping: false,
-      lastScrollTop: 0,
-      scrollDirection: 'down',
-      activeSectionIndex: 0,
-      sectionStates: {
-        hero: 'is-hidden-down',
-        latest: 'is-hidden-down',
-        about: 'is-hidden-down'
-      }
-    }
-  },
-  created() {
-    this.debouncedHandleSectionScroll = debounce(this.handleSectionScroll, 90)
-  },
-  mounted() {
-    this.posts = [...articles]
-      .sort((a, b) => a.id - b.id)
-      .slice(-3)
-      .reverse()
+const router = useRouter()
 
-    this.$nextTick(() => {
-      this.initSectionObserver()
-      this.lastScrollTop = window.pageYOffset || document.documentElement.scrollTop || 0
-      this.activeSectionIndex = this.getNearestSectionIndex()
-      window.addEventListener('scroll', this.debouncedHandleSectionScroll, { passive: true })
-      window.addEventListener('scrollend', this.handleScrollEnd)
-      window.addEventListener('resize', this.handleViewportResize)
-      window.addEventListener('wheel', this.handleSnapInterrupt, { passive: true })
-      window.addEventListener('touchstart', this.handleSnapInterrupt, { passive: true })
-      this.queueSectionSnap(48)
-    })
-  },
-  beforeDestroy() {
-    window.removeEventListener('scroll', this.debouncedHandleSectionScroll)
-    window.removeEventListener('scrollend', this.handleScrollEnd)
-    window.removeEventListener('resize', this.handleViewportResize)
-    window.removeEventListener('wheel', this.handleSnapInterrupt)
-    window.removeEventListener('touchstart', this.handleSnapInterrupt)
+// Root element ref for section snap
+const rootEl = ref<HTMLElement | null>(null)
 
-    if (this.observer) {
-      this.observer.disconnect()
-      this.observer = null
-    }
+// Section snap (handles scroll + visibility + snap internally via onMounted/onBeforeUnmount)
+const { sectionStates } = useSectionSnap(rootEl, ['hero', 'latest', 'about'], 4)
 
-    if (this.snapTimer) {
-      clearTimeout(this.snapTimer)
-      this.snapTimer = null
-    }
+// Latest posts
+const posts = ref<Article[]>([...articles]
+  .sort((a, b) => a.id - b.id)
+  .slice(-3)
+  .reverse()
+)
 
-    if (this.snapAnimationId) {
-      cancelAnimationFrame(this.snapAnimationId)
-      this.snapAnimationId = null
-    }
+// Gradient card state
+interface ColorStop {
+  r: number
+  g: number
+  b: number
+}
 
-    if (this.debouncedHandleSectionScroll) {
-      this.debouncedHandleSectionScroll.cancel()
-    }
+interface CardState {
+  animationId: number | null
+  currentRadius: number
+  targetRadius: number
+  mouseX: number
+  mouseY: number
+  color: string
+  colorScheme: { start: ColorStop; end: ColorStop }
+}
 
-    Object.values(this.cardStates).forEach((state) => {
-      if (state.animationId) {
-        cancelAnimationFrame(state.animationId)
-      }
-    })
-  },
-  methods: {
-    handleSectionScroll() {
-      const currentScrollTop = window.pageYOffset || document.documentElement.scrollTop || 0
-      if (currentScrollTop > this.lastScrollTop + 1) {
-        this.scrollDirection = 'down'
-      } else if (currentScrollTop < this.lastScrollTop - 1) {
-        this.scrollDirection = 'up'
-      }
-      this.lastScrollTop = currentScrollTop
+const cardStates: Record<string, CardState> = {}
+const colorSchemes = [
+  { start: { r: 52, g: 152, b: 219 }, end: { r: 155, g: 89, b: 182 } },
+  { start: { r: 46, g: 204, b: 113 }, end: { r: 52, g: 152, b: 219 } },
+  { start: { r: 231, g: 76, b: 60 }, end: { r: 241, g: 196, b: 15 } }
+]
 
-      this.updateSectionViewportStates()
+const goTextHomepage = () => {
+  router.push('/text-homepage')
+}
 
-      if (this.isAutoSnapping) return
-      this.queueSectionSnap()
-    },
-    handleViewportResize() {
-      this.updateSectionViewportStates()
+const goToArticle = (id: number) => {
+  router.push(`/article/${id}`)
+}
 
-      if (this.isAutoSnapping) return
-      this.activeSectionIndex = this.getNearestSectionIndex()
-      this.queueSectionSnap(36)
-    },
-    handleScrollEnd() {
-      if (this.debouncedHandleSectionScroll) {
-        this.debouncedHandleSectionScroll.flush()
-      }
+const getCardState = (element: HTMLElement): CardState => {
+  const cardId = element.dataset.cardId!
 
-      if (this.isAutoSnapping) return
-      this.queueSectionSnap(0)
-    },
-    handleSnapInterrupt() {
-      if (!this.isAutoSnapping) return
-      this.cancelAutoSnap()
-    },
-    queueSectionSnap(delay = 18) {
-      if (this.snapTimer) {
-        clearTimeout(this.snapTimer)
-      }
-
-      const runSnap = () => {
-        this.snapTimer = null
-        this.snapToDirectionalSection()
-      }
-
-      if (delay <= 0) {
-        runSnap()
-        return
-      }
-
-      this.snapTimer = setTimeout(runSnap, delay)
-    },
-    getSectionElements() {
-      return Array.from(this.$el.querySelectorAll('.observe-section'))
-    },
-    getSectionMetrics() {
-      return this.getSectionElements().map((section, index) => ({
-        index,
-        section,
-        rect: section.getBoundingClientRect()
-      }))
-    },
-    getVisibleHeight(rect, viewportHeight = window.innerHeight || document.documentElement.clientHeight) {
-      const visibleTop = Math.max(rect.top, 0)
-      const visibleBottom = Math.min(rect.bottom, viewportHeight)
-      return Math.max(0, visibleBottom - visibleTop)
-    },
-    getNearestSectionIndex(metrics = this.getSectionMetrics()) {
-      if (!metrics.length) return 0
-
-      let nearestIndex = 0
-      let nearestDistance = Number.POSITIVE_INFINITY
-
-      metrics.forEach((item) => {
-        const distance = Math.abs(item.rect.top)
-        if (distance < nearestDistance) {
-          nearestDistance = distance
-          nearestIndex = item.index
-        }
-      })
-
-      return nearestIndex
-    },
-    snapToDirectionalSection() {
-      const metrics = this.getSectionMetrics()
-      if (!metrics.length) return
-
-      const viewportHeight = window.innerHeight || document.documentElement.clientHeight
-      const currentScrollTop = window.pageYOffset || document.documentElement.scrollTop || 0
-      const nearestIndex = this.getNearestSectionIndex(metrics)
-
-      if (
-        this.activeSectionIndex < 0 ||
-        this.activeSectionIndex >= metrics.length ||
-        Math.abs(this.activeSectionIndex - nearestIndex) > 1 ||
-        this.getVisibleHeight(metrics[this.activeSectionIndex].rect, viewportHeight) === 0
-      ) {
-        this.activeSectionIndex = nearestIndex
-      }
-
-      const baseIndex = this.activeSectionIndex
-      const directionalIndex = this.scrollDirection === 'up'
-        ? Math.max(0, baseIndex - 1)
-        : Math.min(metrics.length - 1, baseIndex + 1)
-      const directionalSection = metrics[directionalIndex]
-      const directionalVisibleHeight = directionalSection
-        ? this.getVisibleHeight(directionalSection.rect, viewportHeight)
-        : 0
-
-      let targetIndex = baseIndex
-      if (directionalIndex !== baseIndex && directionalVisibleHeight >= viewportHeight / 4) {
-        targetIndex = directionalIndex
-      }
-
-      const targetMetric = metrics[targetIndex]
-      const targetScrollTop = Math.max(0, currentScrollTop + targetMetric.rect.top)
-
-      if (Math.abs(targetScrollTop - currentScrollTop) < 4) {
-        this.activeSectionIndex = targetIndex
-        return
-      }
-
-      this.animateSectionSnap(targetScrollTop, targetIndex)
-    },
-    animateSectionSnap(targetScrollTop, targetIndex) {
-      this.cancelAutoSnap()
-
-      const startScrollTop = window.pageYOffset || document.documentElement.scrollTop || 0
-      const distance = targetScrollTop - startScrollTop
-      const duration = Math.max(420, Math.min(760, Math.abs(distance) * 0.52))
-      const startTime = performance.now()
-
-      this.isAutoSnapping = true
-
-      const step = (now) => {
-        const progress = Math.min(1, (now - startTime) / duration)
-        const eased = progress < 0.5
-          ? 4 * progress * progress * progress
-          : 1 - Math.pow(-2 * progress + 2, 3) / 2
-
-        window.scrollTo(0, startScrollTop + distance * eased)
-        this.updateSectionViewportStates()
-
-        if (progress < 1 && this.isAutoSnapping) {
-          this.snapAnimationId = requestAnimationFrame(step)
-          return
-        }
-
-        this.snapAnimationId = null
-        this.isAutoSnapping = false
-        this.activeSectionIndex = targetIndex
-        this.lastScrollTop = window.pageYOffset || document.documentElement.scrollTop || targetScrollTop
-      }
-
-      this.snapAnimationId = requestAnimationFrame(step)
-    },
-    cancelAutoSnap() {
-      if (this.snapAnimationId) {
-        cancelAnimationFrame(this.snapAnimationId)
-        this.snapAnimationId = null
-      }
-
-      this.isAutoSnapping = false
-    },
-    initSectionObserver() {
-      this.updateSectionViewportStates()
-    },
-    updateSectionViewportStates() {
-      const sections = this.getSectionElements()
-      if (!sections.length) return
-
-      const viewportHeight = window.innerHeight || document.documentElement.clientHeight
-      const visibleBandTop = viewportHeight * 0.24
-      const visibleBandBottom = viewportHeight * 0.76
-
-      sections.forEach((section) => {
-        const { sectionId } = section.dataset
-        if (!sectionId) return
-
-        const rect = section.getBoundingClientRect()
-        const centerY = rect.top + rect.height / 2
-        let nextState = 'is-visible'
-
-        if (centerY < visibleBandTop) {
-          nextState = 'is-hidden-up'
-        } else if (centerY > visibleBandBottom) {
-          nextState = 'is-hidden-down'
-        }
-
-        this.$set(this.sectionStates, sectionId, nextState)
-      })
-    },
-    goTextHomepage() {
-      this.$router.push('/text-homepage')
-    },
-    goToArticle(id) {
-      this.$router.push(`/article/${id}`)
-    },
-    getCardState(element) {
-      const cardId = element.dataset.cardId
-
-      if (!this.cardStates[cardId]) {
-        const colorScheme = this.colorSchemes[parseInt(cardId, 10) % this.colorSchemes.length]
-        this.cardStates[cardId] = {
-          animationId: null,
-          currentRadius: 0,
-          targetRadius: 0,
-          mouseX: 0,
-          mouseY: 0,
-          color: '#3498db',
-          colorScheme
-        }
-      }
-
-      return this.cardStates[cardId]
-    },
-    handleMouseMove(event) {
-      const element = event.currentTarget
-      const rect = element.getBoundingClientRect()
-      const state = this.getCardState(element)
-
-      state.mouseX = event.clientX - rect.left
-      state.mouseY = event.clientY - rect.top
-
-      const relX = state.mouseX / rect.width
-      const relY = state.mouseY / rect.height
-      const scheme = state.colorScheme
-      const ratio = (relX + relY) / 2
-      const r = Math.floor(scheme.start.r + (scheme.end.r - scheme.start.r) * ratio)
-      const g = Math.floor(scheme.start.g + (scheme.end.g - scheme.start.g) * ratio)
-      const b = Math.floor(scheme.start.b + (scheme.end.b - scheme.start.b) * ratio)
-
-      state.color = `rgb(${r}, ${g}, ${b})`
-      this.updateGradient(element, state)
-    },
-    handleMouseEnter(event) {
-      const element = event.currentTarget
-      const rect = element.getBoundingClientRect()
-      const state = this.getCardState(element)
-
-      state.mouseX = event.clientX - rect.left
-      state.mouseY = event.clientY - rect.top
-      state.currentRadius = 0
-      state.targetRadius = 150
-
-      this.animateGradient(element, state)
-    },
-    handleMouseLeave(event) {
-      const element = event.currentTarget
-      const state = this.getCardState(element)
-
-      state.targetRadius = 0
-      this.animateGradient(element, state)
-    },
-    animateGradient(element, state) {
-      if (state.animationId) {
-        cancelAnimationFrame(state.animationId)
-      }
-
-      const animate = () => {
-        if (state.currentRadius < state.targetRadius) {
-          state.currentRadius = Math.min(state.currentRadius + 10, state.targetRadius)
-        } else if (state.currentRadius > state.targetRadius) {
-          state.currentRadius = Math.max(state.currentRadius - 10, state.targetRadius)
-        }
-
-        this.updateGradient(element, state)
-
-        if (state.currentRadius !== state.targetRadius) {
-          state.animationId = requestAnimationFrame(animate)
-        } else {
-          state.animationId = null
-        }
-      }
-
-      animate()
-    },
-    updateGradient(element, state) {
-      if (state.currentRadius > 0) {
-        element.style.background = `radial-gradient(circle ${state.currentRadius}px at ${state.mouseX}px ${state.mouseY}px, ${state.color}, transparent), linear-gradient(45deg, #ecf0f1, #bdc3c7)`
-        return
-      }
-
-      element.style.background = 'linear-gradient(45deg, #ecf0f1, #bdc3c7)'
+  if (!cardStates[cardId]) {
+    const colorScheme = colorSchemes[parseInt(cardId, 10) % colorSchemes.length]
+    cardStates[cardId] = {
+      animationId: null,
+      currentRadius: 0,
+      targetRadius: 0,
+      mouseX: 0,
+      mouseY: 0,
+      color: '#3498db',
+      colorScheme
     }
   }
+
+  return cardStates[cardId]
 }
+
+const updateGradient = (element: HTMLElement, state: CardState) => {
+  if (state.currentRadius > 0) {
+    element.style.background = `radial-gradient(circle ${state.currentRadius}px at ${state.mouseX}px ${state.mouseY}px, ${state.color}, transparent), linear-gradient(45deg, #ecf0f1, #bdc3c7)`
+    return
+  }
+
+  element.style.background = 'linear-gradient(45deg, #ecf0f1, #bdc3c7)'
+}
+
+const animateGradient = (element: HTMLElement, state: CardState) => {
+  if (state.animationId) {
+    cancelAnimationFrame(state.animationId)
+  }
+
+  const animate = () => {
+    if (state.currentRadius < state.targetRadius) {
+      state.currentRadius = Math.min(state.currentRadius + 10, state.targetRadius)
+    } else if (state.currentRadius > state.targetRadius) {
+      state.currentRadius = Math.max(state.currentRadius - 10, state.targetRadius)
+    }
+
+    updateGradient(element, state)
+
+    if (state.currentRadius !== state.targetRadius) {
+      state.animationId = requestAnimationFrame(animate)
+    } else {
+      state.animationId = null
+    }
+  }
+
+  animate()
+}
+
+const handleMouseMove = (event: MouseEvent) => {
+  const element = event.currentTarget as HTMLElement
+  const rect = element.getBoundingClientRect()
+  const state = getCardState(element)
+
+  state.mouseX = event.clientX - rect.left
+  state.mouseY = event.clientY - rect.top
+
+  const relX = state.mouseX / rect.width
+  const relY = state.mouseY / rect.height
+  const scheme = state.colorScheme
+  const ratio = (relX + relY) / 2
+  const r = Math.floor(scheme.start.r + (scheme.end.r - scheme.start.r) * ratio)
+  const g = Math.floor(scheme.start.g + (scheme.end.g - scheme.start.g) * ratio)
+  const b = Math.floor(scheme.start.b + (scheme.end.b - scheme.start.b) * ratio)
+
+  state.color = `rgb(${r}, ${g}, ${b})`
+  updateGradient(element, state)
+}
+
+const handleMouseEnter = (event: MouseEvent) => {
+  const element = event.currentTarget as HTMLElement
+  const rect = element.getBoundingClientRect()
+  const state = getCardState(element)
+
+  state.mouseX = event.clientX - rect.left
+  state.mouseY = event.clientY - rect.top
+  state.currentRadius = 0
+  state.targetRadius = 150
+
+  animateGradient(element, state)
+}
+
+const handleMouseLeave = (event: MouseEvent) => {
+  const element = event.currentTarget as HTMLElement
+  const state = getCardState(element)
+
+  state.targetRadius = 0
+  animateGradient(element, state)
+}
+
+// Cleanup card animation frames on unmount
+onBeforeUnmount(() => {
+  Object.values(cardStates).forEach((state) => {
+    if (state.animationId) {
+      cancelAnimationFrame(state.animationId)
+    }
+  })
+})
 </script>
 
 <style scoped>

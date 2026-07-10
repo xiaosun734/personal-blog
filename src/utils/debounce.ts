@@ -1,7 +1,22 @@
-export default function debounce(callback, wait = 80, options = {}) {
-  let timer = null
-  let lastArgs = null
-  let lastThis = null
+export interface DebounceOptions {
+  leading?: boolean
+  trailing?: boolean
+}
+
+export interface DebouncedFunction<T extends (...args: any[]) => void> {
+  (...args: Parameters<T>): void
+  cancel: () => void
+  flush: () => void
+}
+
+export default function debounce<T extends (...args: any[]) => void>(
+  callback: T,
+  wait = 80,
+  options: DebounceOptions = {}
+): DebouncedFunction<T> {
+  let timer: ReturnType<typeof setTimeout> | null = null
+  let lastArgs: Parameters<T> | null = null
+  let lastThis: any = null
   let pendingTrailingCall = false
 
   const leading = options.leading === true
@@ -14,7 +29,7 @@ export default function debounce(callback, wait = 80, options = {}) {
     lastThis = null
   }
 
-  const debounced = function (...args) {
+  const debounced = function (this: any, ...args: Parameters<T>) {
     const shouldCallLeading = leading && !timer
 
     lastArgs = args
@@ -43,7 +58,7 @@ export default function debounce(callback, wait = 80, options = {}) {
     if (shouldCallLeading) {
       callback.apply(lastThis, lastArgs)
     }
-  }
+  } as DebouncedFunction<T>
 
   debounced.cancel = () => {
     if (timer) {

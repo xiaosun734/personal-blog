@@ -15,81 +15,77 @@
   </div>
 </template>
 
-<script>
-import debounce from '../utils/debounce';
-import articles from '../data/articles.js';
+<script setup lang="ts">
+import { ref, onMounted, onBeforeUnmount } from 'vue'
+import { useRouter } from 'vue-router'
+import debounce from '@/utils/debounce'
+import articles from '@/data/articles'
 
-export default {
-  name: 'ClassificationComponent',
-  data() {
-    return {
-      categories: [],
-      translateY: 0,
-      lastScrollTop: 0,
-      scrollTimeout: null
-    };
-  },
-  created() {
-    this.debouncedHandleScroll = debounce(this.handleScroll, 80, { leading: true, trailing: true });
-  },
-  mounted() {
-    this.getCategories();
-    this.lastScrollTop = window.pageYOffset || document.documentElement.scrollTop || 0;
-    window.addEventListener('scroll', this.debouncedHandleScroll, { passive: true });
-  },
-  beforeDestroy() {
-    window.removeEventListener('scroll', this.debouncedHandleScroll);
-    if (this.debouncedHandleScroll) {
-      this.debouncedHandleScroll.cancel();
+interface Category {
+  name: string
+  count: number
+}
+
+const router = useRouter()
+
+const categories = ref<Category[]>([])
+const translateY = ref(0)
+const lastScrollTop = ref(0)
+let scrollTimeout: ReturnType<typeof setTimeout> | null = null
+
+const getCategories = () => {
+  const categoryMap: Record<string, number> = {}
+
+  articles.forEach(article => {
+    if (categoryMap[article.category]) {
+      categoryMap[article.category]++
+    } else {
+      categoryMap[article.category] = 1
     }
-    if (this.scrollTimeout) {
-      clearTimeout(this.scrollTimeout);
-    }
-  },
-  methods: {
-    getCategories() {
-      // 统计每个分类的文章数量
-      const categoryMap = {};
-      
-      articles.forEach(article => {
-        if (categoryMap[article.category]) {
-          categoryMap[article.category]++;
-        } else {
-          categoryMap[article.category] = 1;
-        }
-      });
-      
-      // 转换为数组格式
-      this.categories = Object.entries(categoryMap).map(([name, count]) => ({
-        name,
-        count
-      }));
-    },
-    navigateToCategory(categoryName) {
-      // 跳转到分类页面
-      this.$router.push(`/classification/${categoryName}`);
-    },
-    handleScroll() {
-      const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
-      const scrollDelta = scrollTop - this.lastScrollTop;
-      
-      // 计算新的位置，限制在-10px到10px之间
-      this.translateY = Math.max(Math.min(this.translateY + scrollDelta * 0.2, 10), -10);
-      
-      this.lastScrollTop = scrollTop;
-      
-      // 清除之前的定时器
-      if (this.scrollTimeout) {
-        clearTimeout(this.scrollTimeout);
-      }
-      
-      // 设置新的定时器，当滚动停止后恢复原位
-      this.scrollTimeout = setTimeout(() => {
-        this.translateY = 0;
-      }, 150);
-    }
+  })
+
+  categories.value = Object.entries(categoryMap).map(([name, count]) => ({
+    name,
+    count
+  }))
+}
+
+const navigateToCategory = (categoryName: string) => {
+  router.push(`/classification/${categoryName}`)
+}
+
+const handleScroll = () => {
+  const scrollTop = window.pageYOffset || document.documentElement.scrollTop
+  const scrollDelta = scrollTop - lastScrollTop.value
+
+  translateY.value = Math.max(Math.min(translateY.value + scrollDelta * 0.2, 10), -10)
+
+  lastScrollTop.value = scrollTop
+
+  if (scrollTimeout) {
+    clearTimeout(scrollTimeout)
   }
-};
+
+  scrollTimeout = setTimeout(() => {
+    translateY.value = 0
+  }, 150)
+}
+
+const debouncedHandleScroll = debounce(handleScroll, 80, { leading: true, trailing: true })
+
+onMounted(() => {
+  getCategories()
+  lastScrollTop.value = window.pageYOffset || document.documentElement.scrollTop || 0
+  window.addEventListener('scroll', debouncedHandleScroll, { passive: true })
+})
+
+onBeforeUnmount(() => {
+  window.removeEventListener('scroll', debouncedHandleScroll)
+  debouncedHandleScroll.cancel()
+  if (scrollTimeout) {
+    clearTimeout(scrollTimeout)
+  }
+})
 </script>
 
 <style scoped>

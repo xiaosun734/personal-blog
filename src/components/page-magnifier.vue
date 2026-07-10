@@ -1,5 +1,6 @@
 <template>
   <div
+    ref="rootEl"
     class="page-magnifier"
     @mouseenter="handleSurfaceEnter"
     @mousemove="handleSurfaceMove"
@@ -35,7 +36,7 @@
       :class="{ active: isMagnifierEnabled }"
       :style="toggleButtonStyle"
       :title="isMagnifierEnabled ? enabledTitle : disabledTitle"
-      :aria-pressed="String(isMagnifierEnabled)"
+      :aria-pressed="isMagnifierEnabled ? 'true' : 'false'"
       @click="toggleMagnifier"
     >
       <slot name="toggle-icon">
@@ -48,220 +49,210 @@
   </div>
 </template>
 
-<script>
-import debounce from '../utils/debounce';
+<script setup lang="ts">
+import { ref, computed, onMounted, onBeforeUnmount } from 'vue'
+import debounce from '@/utils/debounce'
 
-export default {
-  name: 'PageMagnifier',
-  props: {
-    radius: {    //放大镜半径
-      type: Number,
-      default: 60
-    },
-    zoomLevel: {    //放大倍数
-      type: Number,
-      default: 1.8
-    },
-    enabledTitle: {   //放大镜启用时按钮的提示文本
-      type: String,
-      default: '关闭放大镜'
-    },
-    disabledTitle: {    //放大镜禁用时按钮的提示文本
-      type: String,
-      default: '打开放大镜'
-    },
-    buttonOffsetBottom: {    //按钮底部偏移量
-      type: Number,
-      default: 80
-    },
-    buttonOffsetLeft: {    //按钮左侧偏移量
-      type: Number,
-      default: 20
-    },
-    buttonOffsetBottomMobile: {
-      type: Number,
-      default: 63
-    },
-    buttonOffsetLeftMobile: {
-      type: Number,
-      default: 15
-    },
-    buttonSize: {
-      type: Number,
-      default: 48
-    },
-    buttonSizeMobile: {
-      type: Number,
-      default: 40
-    }
-  },
-  data() {
-    return {
-      isMagnifierEnabled: false,
-      showMagnifierLens: false,
-      mouseX: 0,
-      mouseY: 0,
-      surfaceLeft: 0,
-      surfaceTop: 0,
-      surfaceWidth: 0,
-      scrollTranslateY: 0,
-      lastScrollTop: 0,
-      scrollMotionTimeout: null
-    };
-  },
-  created() {
-    this.debouncedHandleScrollMotion = debounce(this.handleScrollMotion, 80, { leading: true, trailing: true });
-    this.debouncedSyncSurfaceBounds = debounce(this.syncSurfaceBounds, 80, { leading: true, trailing: true });
-  },
-  computed: {
-    magnifierOverlayStyle() {
-      const clipPath = this.showMagnifierLens
-        ? `circle(${this.radius}px at ${this.mouseX}px ${this.mouseY}px)`
-        : 'circle(0px at 0 0)';
+const props = withDefaults(defineProps<{
+  radius?: number
+  zoomLevel?: number
+  enabledTitle?: string
+  disabledTitle?: string
+  buttonOffsetBottom?: number
+  buttonOffsetLeft?: number
+  buttonOffsetBottomMobile?: number
+  buttonOffsetLeftMobile?: number
+  buttonSize?: number
+  buttonSizeMobile?: number
+}>(), {
+  radius: 60,
+  zoomLevel: 1.8,
+  enabledTitle: '关闭放大镜',
+  disabledTitle: '打开放大镜',
+  buttonOffsetBottom: 80,
+  buttonOffsetLeft: 20,
+  buttonOffsetBottomMobile: 63,
+  buttonOffsetLeftMobile: 15,
+  buttonSize: 48,
+  buttonSizeMobile: 40
+})
 
-      return {
-        clipPath: clipPath,
-        WebkitClipPath: clipPath
-      };
-    },
-    magnifierScrollLayerStyle() {
-      const localMouseX = this.mouseX - this.surfaceLeft;
-      const localMouseY = this.mouseY - this.surfaceTop;
-      const translateX = (1 - this.zoomLevel) * localMouseX;
-      const translateY = (1 - this.zoomLevel) * localMouseY;
+// Template ref
+const rootEl = ref<HTMLElement | null>(null)
 
-      return {
-        left: `${this.surfaceLeft}px`,
-        top: `${this.surfaceTop}px`,
-        width: `${this.surfaceWidth}px`,
-        transform: `translate(${translateX}px, ${translateY}px) scale(${this.zoomLevel})`
-      };
-    },
-    magnifierFixedLayerStyle() {
-      const translateX = (1 - this.zoomLevel) * this.mouseX;
-      const translateY = (1 - this.zoomLevel) * this.mouseY;
+// State
+const isMagnifierEnabled = ref(false)
+const showMagnifierLens = ref(false)
+const mouseX = ref(0)
+const mouseY = ref(0)
+const surfaceLeft = ref(0)
+const surfaceTop = ref(0)
+const surfaceWidth = ref(0)
+const scrollTranslateY = ref(0)
+const lastScrollTop = ref(0)
+let scrollMotionTimeout: ReturnType<typeof setTimeout> | null = null
 
-      return {
-        transform: `translate(${translateX}px, ${translateY}px) scale(${this.zoomLevel})`
-      };
-    },
-    magnifierLensStyle() {
-      const diameter = this.radius * 2;
+// Computed
+const magnifierOverlayStyle = computed(() => {
+  const clipPath = showMagnifierLens.value
+    ? `circle(${props.radius}px at ${mouseX.value}px ${mouseY.value}px)`
+    : 'circle(0px at 0 0)'
 
-      return {
-        width: `${diameter}px`,
-        height: `${diameter}px`,
-        left: `${this.mouseX - this.radius}px`,
-        top: `${this.mouseY - this.radius}px`
-      };
-    },
-    toggleButtonStyle() {
-      return {
-        '--page-magnifier-button-size': `${this.buttonSize}px`,
-        '--page-magnifier-button-size-mobile': `${this.buttonSizeMobile}px`,
-        '--page-magnifier-button-bottom': `${this.buttonOffsetBottom}px`,
-        '--page-magnifier-button-left': `${this.buttonOffsetLeft}px`,
-        '--page-magnifier-button-bottom-mobile': `${this.buttonOffsetBottomMobile}px`,
-        '--page-magnifier-button-left-mobile': `${this.buttonOffsetLeftMobile}px`,
-        '--page-magnifier-button-scroll-y': `${this.scrollTranslateY}px`
-      };
-    }
-  },
-  mounted() {
-    this.lastScrollTop = window.pageYOffset || document.documentElement.scrollTop || 0;
-    this.syncSurfaceBounds();
-    window.addEventListener('scroll', this.debouncedHandleScrollMotion, { passive: true });
-  },
-  beforeDestroy() {
-    window.removeEventListener('scroll', this.debouncedHandleScrollMotion);
-    this.removeViewportListeners();
-    if (this.debouncedHandleScrollMotion) {
-      this.debouncedHandleScrollMotion.cancel();
-    }
-    if (this.debouncedSyncSurfaceBounds) {
-      this.debouncedSyncSurfaceBounds.cancel();
-    }
-    if (this.scrollMotionTimeout) {
-      clearTimeout(this.scrollMotionTimeout);
-    }
-  },
-  methods: {
-    toggleMagnifier() {
-      this.isMagnifierEnabled = !this.isMagnifierEnabled;
-
-      if (this.isMagnifierEnabled) {
-        this.syncSurfaceBounds();
-        this.addViewportListeners();
-        return;
-      }
-
-      this.showMagnifierLens = false;
-      this.removeViewportListeners();
-    },
-    handleSurfaceEnter(event) {
-      if (!this.isMagnifierEnabled) {
-        return;
-      }
-
-      this.updatePointer(event);
-      this.showMagnifierLens = true;
-    },
-    handleSurfaceMove(event) {
-      if (!this.isMagnifierEnabled) {
-        return;
-      }
-
-      this.updatePointer(event);
-      this.showMagnifierLens = true;
-    },
-    handleSurfaceLeave() {
-      this.showMagnifierLens = false;
-    },
-    updatePointer(event) {
-      this.mouseX = event.clientX;
-      this.mouseY = event.clientY;
-    },
-    syncSurfaceBounds() {
-      if (!this.$el) {
-        return;
-      }
-
-      const rect = this.$el.getBoundingClientRect();
-      this.surfaceLeft = rect.left;
-      this.surfaceTop = rect.top;
-      this.surfaceWidth = rect.width;
-    },
-    handleViewportBlur() {
-      this.showMagnifierLens = false;
-    },
-    handleScrollMotion() {
-      const scrollTop = window.pageYOffset || document.documentElement.scrollTop || 0;
-      const scrollDelta = scrollTop - this.lastScrollTop;
-
-      this.scrollTranslateY = Math.max(Math.min(this.scrollTranslateY + scrollDelta * 0.2, 10), -10);
-      this.lastScrollTop = scrollTop;
-
-      if (this.scrollMotionTimeout) {
-        clearTimeout(this.scrollMotionTimeout);
-      }
-
-      this.scrollMotionTimeout = setTimeout(() => {
-        this.scrollTranslateY = 0;
-        this.scrollMotionTimeout = null;
-      }, 150);
-    },
-    addViewportListeners() {
-      window.addEventListener('scroll', this.debouncedSyncSurfaceBounds, { passive: true });
-      window.addEventListener('resize', this.syncSurfaceBounds);
-      window.addEventListener('blur', this.handleViewportBlur);
-    },
-    removeViewportListeners() {
-      window.removeEventListener('scroll', this.debouncedSyncSurfaceBounds);
-      window.removeEventListener('resize', this.syncSurfaceBounds);
-      window.removeEventListener('blur', this.handleViewportBlur);
-    }
+  return {
+    clipPath: clipPath,
+    WebkitClipPath: clipPath
   }
-};
+})
+
+const magnifierScrollLayerStyle = computed(() => {
+  const localMouseX = mouseX.value - surfaceLeft.value
+  const localMouseY = mouseY.value - surfaceTop.value
+  const translateX = (1 - props.zoomLevel) * localMouseX
+  const translateY = (1 - props.zoomLevel) * localMouseY
+
+  return {
+    left: `${surfaceLeft.value}px`,
+    top: `${surfaceTop.value}px`,
+    width: `${surfaceWidth.value}px`,
+    transform: `translate(${translateX}px, ${translateY}px) scale(${props.zoomLevel})`
+  }
+})
+
+const magnifierFixedLayerStyle = computed(() => {
+  const translateX = (1 - props.zoomLevel) * mouseX.value
+  const translateY = (1 - props.zoomLevel) * mouseY.value
+
+  return {
+    transform: `translate(${translateX}px, ${translateY}px) scale(${props.zoomLevel})`
+  }
+})
+
+const magnifierLensStyle = computed(() => {
+  const diameter = props.radius * 2
+
+  return {
+    width: `${diameter}px`,
+    height: `${diameter}px`,
+    left: `${mouseX.value - props.radius}px`,
+    top: `${mouseY.value - props.radius}px`
+  }
+})
+
+const toggleButtonStyle = computed(() => ({
+  '--page-magnifier-button-size': `${props.buttonSize}px`,
+  '--page-magnifier-button-size-mobile': `${props.buttonSizeMobile}px`,
+  '--page-magnifier-button-bottom': `${props.buttonOffsetBottom}px`,
+  '--page-magnifier-button-left': `${props.buttonOffsetLeft}px`,
+  '--page-magnifier-button-bottom-mobile': `${props.buttonOffsetBottomMobile}px`,
+  '--page-magnifier-button-left-mobile': `${props.buttonOffsetLeftMobile}px`,
+  '--page-magnifier-button-scroll-y': `${scrollTranslateY.value}px`
+}))
+
+// Methods
+const syncSurfaceBounds = () => {
+  if (!rootEl.value) {
+    return
+  }
+
+  const rect = rootEl.value.getBoundingClientRect()
+  surfaceLeft.value = rect.left
+  surfaceTop.value = rect.top
+  surfaceWidth.value = rect.width
+}
+
+const handleViewportBlur = () => {
+  showMagnifierLens.value = false
+}
+
+const handleScrollMotion = () => {
+  const scrollTop = window.pageYOffset || document.documentElement.scrollTop || 0
+  const scrollDelta = scrollTop - lastScrollTop.value
+
+  scrollTranslateY.value = Math.max(Math.min(scrollTranslateY.value + scrollDelta * 0.2, 10), -10)
+  lastScrollTop.value = scrollTop
+
+  if (scrollMotionTimeout) {
+    clearTimeout(scrollMotionTimeout)
+  }
+
+  scrollMotionTimeout = setTimeout(() => {
+    scrollTranslateY.value = 0
+    scrollMotionTimeout = null
+  }, 150)
+}
+
+const updatePointer = (event: MouseEvent) => {
+  mouseX.value = event.clientX
+  mouseY.value = event.clientY
+}
+
+const addViewportListeners = () => {
+  window.addEventListener('scroll', debouncedSyncSurfaceBounds, { passive: true })
+  window.addEventListener('resize', syncSurfaceBounds)
+  window.addEventListener('blur', handleViewportBlur)
+}
+
+const removeViewportListeners = () => {
+  window.removeEventListener('scroll', debouncedSyncSurfaceBounds)
+  window.removeEventListener('resize', syncSurfaceBounds)
+  window.removeEventListener('blur', handleViewportBlur)
+}
+
+const toggleMagnifier = () => {
+  isMagnifierEnabled.value = !isMagnifierEnabled.value
+
+  if (isMagnifierEnabled.value) {
+    syncSurfaceBounds()
+    addViewportListeners()
+    return
+  }
+
+  showMagnifierLens.value = false
+  removeViewportListeners()
+}
+
+const handleSurfaceEnter = (event: MouseEvent) => {
+  if (!isMagnifierEnabled.value) {
+    return
+  }
+
+  updatePointer(event)
+  showMagnifierLens.value = true
+}
+
+const handleSurfaceMove = (event: MouseEvent) => {
+  if (!isMagnifierEnabled.value) {
+    return
+  }
+
+  updatePointer(event)
+  showMagnifierLens.value = true
+}
+
+const handleSurfaceLeave = () => {
+  showMagnifierLens.value = false
+}
+
+// Debounced handlers
+const debouncedHandleScrollMotion = debounce(handleScrollMotion, 80, { leading: true, trailing: true })
+const debouncedSyncSurfaceBounds = debounce(syncSurfaceBounds, 80, { leading: true, trailing: true })
+
+// Lifecycle
+onMounted(() => {
+  lastScrollTop.value = window.pageYOffset || document.documentElement.scrollTop || 0
+  syncSurfaceBounds()
+  window.addEventListener('scroll', debouncedHandleScrollMotion, { passive: true })
+})
+
+onBeforeUnmount(() => {
+  window.removeEventListener('scroll', debouncedHandleScrollMotion)
+  removeViewportListeners()
+  debouncedHandleScrollMotion.cancel()
+  debouncedSyncSurfaceBounds.cancel()
+  if (scrollMotionTimeout) {
+    clearTimeout(scrollMotionTimeout)
+  }
+})
 </script>
 
 <style scoped>

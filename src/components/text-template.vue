@@ -5,23 +5,14 @@
   </div>
 </template>
 
-<script>
-import HeaderComponent from './header-component.vue';
-import ArticlePanel from './article-panel.vue';
+<script setup lang="ts">
+import HeaderComponent from './header-component.vue'
+import ArticlePanel from './article-panel.vue'
+import type { Article } from '@/types/article'
 
-export default {
-  name: 'TextTemplate',
-  components: {
-    HeaderComponent,
-    ArticlePanel
-  },
-  props: {
-    article: {
-      type: Object,
-      default: () => ({})
-    }
-  }
-};
+defineProps<{
+  article: Article
+}>()
 </script>
 
 <style scoped>

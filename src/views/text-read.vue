@@ -20,46 +20,35 @@
   </div>
 </template>
 
-<script>
-import TextTemplate from '../components/text-template.vue';
-import ClassificationComponent from '../components/classification-component.vue';
-import BackButton from '../components/back-button.vue';
-import HeaderComponent from '../components/header-component.vue';
-import ArticlePanel from '../components/article-panel.vue';
-import PageMagnifier from '../components/page-magnifier.vue';
-import articles from '../data/articles';
+<script setup lang="ts">
+import { ref, watch, onMounted } from 'vue'
+import { useRoute } from 'vue-router'
+import TextTemplate from '../components/text-template.vue'
+import ClassificationComponent from '../components/classification-component.vue'
+import BackButton from '../components/back-button.vue'
+import HeaderComponent from '../components/header-component.vue'
+import ArticlePanel from '../components/article-panel.vue'
+import PageMagnifier from '../components/page-magnifier.vue'
+import articles from '@/data/articles'
+import type { Article } from '@/types/article'
 
-export default {
-  name: 'TextRead',
-  components: {
-    TextTemplate,
-    ClassificationComponent,
-    BackButton,
-    HeaderComponent,
-    ArticlePanel,
-    PageMagnifier
-  },
-  data() {
-    return {
-      articles: articles,
-      article: {}
-    };
-  },
-  mounted() {
-    this.loadArticle();
-  },
-  watch: {
-    '$route.params.id'() {
-      this.loadArticle();
-    }
-  },
-  methods: {
-    loadArticle() {
-      const articleId = this.$route.params.id;
-      this.article = this.articles.find(item => item.id == articleId) || this.articles[0];
-    }
-  }
-};
+const route = useRoute()
+
+const allArticles = articles as Article[]
+const article = ref<Article>(allArticles[0])
+
+const loadArticle = () => {
+  const articleId = Number(route.params.id)
+  article.value = allArticles.find(item => item.id === articleId) || allArticles[0]
+}
+
+onMounted(() => {
+  loadArticle()
+})
+
+watch(() => route.params.id, () => {
+  loadArticle()
+})
 </script>
 
 <style scoped>
