@@ -19,7 +19,7 @@
 import { ref, onMounted, onBeforeUnmount } from 'vue'
 import { useRouter } from 'vue-router'
 import debounce from '@/utils/debounce'
-import articles from '@/data/articles'
+import { fetchArticleSummaries, getArticlesState } from '@/api/articles'
 
 interface Category {
   name: string
@@ -34,9 +34,10 @@ const lastScrollTop = ref(0)
 let scrollTimeout: ReturnType<typeof setTimeout> | null = null
 
 const getCategories = () => {
+  const s = getArticlesState()
   const categoryMap: Record<string, number> = {}
 
-  articles.forEach(article => {
+  s.summaries.forEach(article => {
     if (categoryMap[article.category]) {
       categoryMap[article.category]++
     } else {
@@ -73,7 +74,8 @@ const handleScroll = () => {
 
 const debouncedHandleScroll = debounce(handleScroll, 80, { leading: true, trailing: true })
 
-onMounted(() => {
+onMounted(async () => {
+  await fetchArticleSummaries()
   getCategories()
   lastScrollTop.value = window.pageYOffset || document.documentElement.scrollTop || 0
   window.addEventListener('scroll', debouncedHandleScroll, { passive: true })

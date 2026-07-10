@@ -33,8 +33,8 @@
 <script setup lang="ts">
 import { ref, computed, watch, onMounted } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
-import articles from '@/data/articles'
-import type { Article } from '@/types/article'
+import { fetchArticleSummaries, getArticlesState } from '@/api/articles'
+import type { ArticleSummary } from '@/api/articles'
 import ClassificationComponent from '../components/classification-component.vue'
 import BackButton from '../components/back-button.vue'
 import HeaderComponent from '../components/header-component.vue'
@@ -43,7 +43,9 @@ const router = useRouter()
 const route = useRoute()
 
 const currentCategory = ref('')
-const allArticles = ref<Article[]>(articles)
+const state = getArticlesState()
+
+const allArticles = computed<ArticleSummary[]>(() => state.summaries)
 
 const filteredArticles = computed(() => {
   if (!currentCategory.value) {
@@ -56,7 +58,8 @@ const navigateToArticle = (id: number) => {
   router.push(`/article/${id}`)
 }
 
-onMounted(() => {
+onMounted(async () => {
+  await fetchArticleSummaries()
   currentCategory.value = (route.params.category as string) || ''
 })
 

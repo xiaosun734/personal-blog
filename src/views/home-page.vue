@@ -77,11 +77,11 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onBeforeUnmount } from 'vue'
+import { ref, computed, onMounted, onBeforeUnmount } from 'vue'
 import { useRouter } from 'vue-router'
 import HeaderComponent from '../components/header-component.vue'
-import articles from '@/data/articles'
-import type { Article } from '@/types/article'
+import { fetchArticleSummaries, getArticlesState } from '@/api/articles'
+import type { ArticleSummary } from '@/api/articles'
 import { useSectionSnap } from '@/composables/useSectionSnap'
 
 const router = useRouter()
@@ -93,11 +93,18 @@ const rootEl = ref<HTMLElement | null>(null)
 const { sectionStates } = useSectionSnap(rootEl, ['hero', 'latest', 'about'], 4)
 
 // Latest posts
-const posts = ref<Article[]>([...articles]
-  .sort((a, b) => a.id - b.id)
-  .slice(-3)
-  .reverse()
-)
+const posts = computed<ArticleSummary[]>(() => {
+  const s = getArticlesState()
+  if (!s.fetched) return []
+  return [...s.summaries]
+    .sort((a, b) => a.id - b.id)
+    .slice(-3)
+    .reverse()
+})
+
+onMounted(() => {
+  fetchArticleSummaries()
+})
 
 // Gradient card state
 interface ColorStop {

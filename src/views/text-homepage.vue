@@ -28,17 +28,21 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { computed, onMounted } from 'vue'
 import HeaderComponent from '../components/header-component.vue'
 import ClassificationComponent from '../components/classification-component.vue'
 import BackButton from '../components/back-button.vue'
-import articles from '@/data/articles'
-import type { Article } from '@/types/article'
+import { fetchArticleSummaries, getArticlesState } from '@/api/articles'
+import type { ArticleSummary } from '@/api/articles'
 
-const articleList = ref<Article[]>([])
+const state = getArticlesState()
+const articleList = computed<ArticleSummary[]>(() => {
+  if (!state.fetched) return []
+  return [...state.summaries].sort((a, b) => b.id - a.id)
+})
 
 onMounted(() => {
-  articleList.value = [...articles].sort((a, b) => b.id - a.id)
+  fetchArticleSummaries()
 })
 </script>
 

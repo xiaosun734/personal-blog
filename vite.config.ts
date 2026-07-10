@@ -12,5 +12,13 @@ export default defineConfig({
   base: '/',
   build: {
     outDir: 'dist'
+  },
+  server: {
+    proxy: {
+      '/api': {
+        target: 'https://personal-blog-hazel.vercel.app',
+        changeOrigin: true
+      }
+    }
   }
 })

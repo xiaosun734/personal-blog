@@ -1,7 +1,13 @@
 {
   "permissions": {
     "allow": [
-      "Bash(npm install *)"
+      "Bash(npm install *)",
+      "Bash(pnpm add *)",
+      "Bash(mkdir -p c:/Users/m1738/Desktop/program/personal-blog/articles)",
+      "Bash(pnpm run *)"
+    ],
+    "additionalDirectories": [
+      "c:\\Users\\m1738\\Desktop\\program\\personal-blog"
     ]
   }
 }
