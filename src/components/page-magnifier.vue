@@ -91,6 +91,7 @@ const surfaceWidth = ref(0)
 const scrollTranslateY = ref(0)
 const lastScrollTop = ref(0)
 let scrollMotionTimeout: ReturnType<typeof setTimeout> | null = null
+let scrollRafId: number | null = null
 
 // Computed
 const magnifierOverlayStyle = computed(() => {
@@ -165,20 +166,25 @@ const handleViewportBlur = () => {
 }
 
 const handleScrollMotion = () => {
-  const scrollTop = window.pageYOffset || document.documentElement.scrollTop || 0
-  const scrollDelta = scrollTop - lastScrollTop.value
+  if (scrollRafId !== null) return
+  scrollRafId = requestAnimationFrame(() => {
+    scrollRafId = null
 
-  scrollTranslateY.value = Math.max(Math.min(scrollTranslateY.value + scrollDelta * 0.2, 10), -10)
-  lastScrollTop.value = scrollTop
+    const scrollTop = window.pageYOffset || document.documentElement.scrollTop || 0
+    const scrollDelta = scrollTop - lastScrollTop.value
 
-  if (scrollMotionTimeout) {
-    clearTimeout(scrollMotionTimeout)
-  }
+    scrollTranslateY.value = Math.max(Math.min(scrollTranslateY.value + scrollDelta * 0.2, 10), -10)
+    lastScrollTop.value = scrollTop
 
-  scrollMotionTimeout = setTimeout(() => {
-    scrollTranslateY.value = 0
-    scrollMotionTimeout = null
-  }, 150)
+    if (scrollMotionTimeout) {
+      clearTimeout(scrollMotionTimeout)
+    }
+
+    scrollMotionTimeout = setTimeout(() => {
+      scrollTranslateY.value = 0
+      scrollMotionTimeout = null
+    }, 150)
+  })
 }
 
 const updatePointer = (event: MouseEvent) => {
@@ -234,21 +240,23 @@ const handleSurfaceLeave = () => {
 }
 
 // Debounced handlers
-const debouncedHandleScrollMotion = debounce(handleScrollMotion, 80, { leading: true, trailing: true })
 const debouncedSyncSurfaceBounds = debounce(syncSurfaceBounds, 80, { leading: true, trailing: true })
 
 // Lifecycle
 onMounted(() => {
   lastScrollTop.value = window.pageYOffset || document.documentElement.scrollTop || 0
   syncSurfaceBounds()
-  window.addEventListener('scroll', debouncedHandleScrollMotion, { passive: true })
+  window.addEventListener('scroll', handleScrollMotion, { passive: true })
 })
 
 onBeforeUnmount(() => {
-  window.removeEventListener('scroll', debouncedHandleScrollMotion)
+  window.removeEventListener('scroll', handleScrollMotion)
   removeViewportListeners()
-  debouncedHandleScrollMotion.cancel()
   debouncedSyncSurfaceBounds.cancel()
+  if (scrollRafId !== null) {
+    cancelAnimationFrame(scrollRafId)
+    scrollRafId = null
+  }
   if (scrollMotionTimeout) {
     clearTimeout(scrollMotionTimeout)
   }

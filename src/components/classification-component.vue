@@ -18,7 +18,6 @@
 <script setup lang="ts">
 import { ref, onMounted, onBeforeUnmount } from 'vue'
 import { useRouter } from 'vue-router'
-import debounce from '@/utils/debounce'
 import { fetchArticleSummaries, getArticlesState } from '@/api/articles'
 
 interface Category {
@@ -32,6 +31,7 @@ const categories = ref<Category[]>([])
 const translateY = ref(0)
 const lastScrollTop = ref(0)
 let scrollTimeout: ReturnType<typeof setTimeout> | null = null
+let rafId: number | null = null
 
 const getCategories = () => {
   const s = getArticlesState()
@@ -56,34 +56,40 @@ const navigateToCategory = (categoryName: string) => {
 }
 
 const handleScroll = () => {
-  const scrollTop = window.pageYOffset || document.documentElement.scrollTop
-  const scrollDelta = scrollTop - lastScrollTop.value
+  if (rafId !== null) return
+  rafId = requestAnimationFrame(() => {
+    rafId = null
 
-  translateY.value = Math.max(Math.min(translateY.value + scrollDelta * 0.2, 10), -10)
+    const scrollTop = window.pageYOffset || document.documentElement.scrollTop
+    const scrollDelta = scrollTop - lastScrollTop.value
 
-  lastScrollTop.value = scrollTop
+    translateY.value = Math.max(Math.min(translateY.value + scrollDelta * 0.2, 10), -10)
 
-  if (scrollTimeout) {
-    clearTimeout(scrollTimeout)
-  }
+    lastScrollTop.value = scrollTop
 
-  scrollTimeout = setTimeout(() => {
-    translateY.value = 0
-  }, 150)
+    if (scrollTimeout) {
+      clearTimeout(scrollTimeout)
+    }
+
+    scrollTimeout = setTimeout(() => {
+      translateY.value = 0
+    }, 150)
+  })
 }
-
-const debouncedHandleScroll = debounce(handleScroll, 80, { leading: true, trailing: true })
 
 onMounted(async () => {
   await fetchArticleSummaries()
   getCategories()
   lastScrollTop.value = window.pageYOffset || document.documentElement.scrollTop || 0
-  window.addEventListener('scroll', debouncedHandleScroll, { passive: true })
+  window.addEventListener('scroll', handleScroll, { passive: true })
 })
 
 onBeforeUnmount(() => {
-  window.removeEventListener('scroll', debouncedHandleScroll)
-  debouncedHandleScroll.cancel()
+  window.removeEventListener('scroll', handleScroll)
+  if (rafId !== null) {
+    cancelAnimationFrame(rafId)
+    rafId = null
+  }
   if (scrollTimeout) {
     clearTimeout(scrollTimeout)
   }

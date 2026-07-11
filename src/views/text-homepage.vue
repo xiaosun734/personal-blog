@@ -11,18 +11,28 @@
 
       <section class="articles">
         <h2>全部文章</h2>
-        <ul class="article-list">
+        <!-- 加载中 -->
+        <div v-if="state.loading" class="status-msg">加载中...</div>
+        <!-- 加载出错 -->
+        <div v-else-if="state.error" class="status-msg error">
+          <p>加载失败：{{ state.error }}</p>
+          <button class="retry-btn" @click="retry">重试</button>
+        </div>
+        <!-- 文章列表 -->
+        <ul v-else-if="articleList.length > 0" class="article-list">
           <li class="article-item" v-for="item in articleList" :key="item.id">
             <router-link :to="{ name: 'TextRead', params: { id: item.id } }">
               <h3>{{ item.title }}</h3>
               <p>{{ item.desc }}</p>
-              <span class="meta">{{ item.date }} · {{ item.category }}</span>
+              <span class="meta">{{ formatDate(item.date) }} · {{ item.category }}</span>
             </router-link>
           </li>
         </ul>
+        <!-- 无数据 -->
+        <div v-else class="status-msg">暂无文章</div>
       </section>
     </main>
-    
+
     <ClassificationComponent />
   </div>
 </template>
@@ -34,12 +44,18 @@ import ClassificationComponent from '../components/classification-component.vue'
 import BackButton from '../components/back-button.vue'
 import { fetchArticleSummaries, getArticlesState } from '@/api/articles'
 import type { ArticleSummary } from '@/api/articles'
+import { formatDate } from '@/utils/format'
 
 const state = getArticlesState()
 const articleList = computed<ArticleSummary[]>(() => {
   if (!state.fetched) return []
   return [...state.summaries].sort((a, b) => b.id - a.id)
 })
+
+const retry = () => {
+  state.error = null
+  fetchArticleSummaries()
+}
 
 onMounted(() => {
   fetchArticleSummaries()
@@ -87,6 +103,34 @@ onMounted(() => {
   color: #213045;
   border-bottom: 2px solid #d9e5f3;
   padding-bottom: 10px;
+}
+
+/* 状态提示 */
+.status-msg {
+  text-align: center;
+  padding: 40px 20px;
+  color: #7a8da5;
+  font-size: 1rem;
+}
+
+.status-msg.error {
+  color: #e74c3c;
+}
+
+.retry-btn {
+  margin-top: 12px;
+  padding: 8px 24px;
+  border: none;
+  border-radius: 6px;
+  background: #3498db;
+  color: #fff;
+  font-size: 0.95rem;
+  cursor: pointer;
+  transition: background 0.3s ease;
+}
+
+.retry-btn:hover {
+  background: #2980b9;
 }
 
 .article-list {
@@ -237,6 +281,37 @@ onMounted(() => {
   font-weight: 500;
 }
 
+.error-banner {
+  grid-column: 1 / -1;
+  background: #fff5f5;
+  border: 1px solid #fed7d7;
+  border-radius: 10px;
+  padding: 24px;
+  text-align: center;
+  list-style: none;
+}
+
+.error-banner p {
+  color: #c53030;
+  margin: 0 0 12px;
+  font-size: 0.95rem;
+}
+
+.retry-btn {
+  border: none;
+  border-radius: 6px;
+  padding: 8px 20px;
+  background: #c53030;
+  color: #fff;
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: background 0.3s ease;
+}
+
+.retry-btn:hover {
+  background: #9b2c2c;
+}
+
 @media (max-width: 992px) {
   .classification-container {
     position: relative;
@@ -246,12 +321,12 @@ onMounted(() => {
     margin: 20px auto;
     max-width: 800px;
   }
-  
+
   .classification-list {
     flex-direction: row;
     flex-wrap: wrap;
   }
-  
+
   .classification-item {
     flex: 1;
     min-width: 120px;

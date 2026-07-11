@@ -4,7 +4,12 @@
       "Bash(npm install *)",
       "Bash(pnpm add *)",
       "Bash(mkdir -p c:/Users/m1738/Desktop/program/personal-blog/articles)",
-      "Bash(pnpm run *)"
+      "Bash(pnpm run *)",
+      "Bash(curl -s \"https://personal-blog-sigma-gold-58.vercel.app/api/articles\")",
+      "Bash(curl -v \"https://personal-blog-sigma-gold-58.vercel.app/api/articles\")",
+      "WebFetch(domain:api.github.com)",
+      "WebFetch(domain:personal-blog-sigma-gold-58.vercel.app)",
+      "Bash(npx vercel *)"
     ],
     "additionalDirectories": [
       "c:\\Users\\m1738\\Desktop\\program\\personal-blog"

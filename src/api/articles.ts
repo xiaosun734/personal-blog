@@ -1,3 +1,4 @@
+import { reactive } from 'vue'
 import type { Article } from '@/types/article'
 
 export interface ArticleSummary {
@@ -16,12 +17,12 @@ interface ArticlesState {
   fetched: boolean
 }
 
-const state: ArticlesState = {
+const state = reactive<ArticlesState>({
   summaries: [],
   loading: false,
   error: null,
   fetched: false
-}
+})
 
 let fetchPromise: Promise<void> | null = null
 

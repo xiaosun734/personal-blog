@@ -451,9 +451,19 @@ onBeforeUnmount(() => {
 }
 
 .contact-card:hover {
-  transform: translateY(-8px);
+  transform: translateY(-8px) scale(1.05);
   box-shadow: 0 12px 32px rgba(0, 0, 0, 0.15);
   z-index: 10;
+}
+
+/* 前一个卡片被挤压 */
+.contact-card:has(+ .contact-card:hover) {
+  transform: translateX(-10px);
+}
+
+/* 后一个卡片被挤压 */
+.contact-card:hover + .contact-card {
+  transform: translateX(10px);
 }
 
 .contact-icon {

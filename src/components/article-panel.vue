@@ -5,7 +5,7 @@
         <h1 class="article-title">{{ article.title }}</h1>
         <div class="article-meta">
           <span class="author">作者：{{ article.author }}</span>
-          <span class="date">发布日期：{{ article.date }}</span>
+          <span class="date">发布日期：{{ formatDate(article.date) }}</span>
           <span class="category">分类：{{ article.category }}</span>
         </div>
       </header>
@@ -31,6 +31,7 @@
 
 <script setup lang="ts">
 import type { Article } from '@/types/article'
+import { formatDate } from '@/utils/format'
 
 defineProps<{
   article: Article
@@ -122,39 +123,41 @@ defineProps<{
   font-size: 0.9rem;
 }
 
-.photo-gallery {
+.article-content :deep(.photo-gallery) {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-  gap: 20px;
-  margin: 30px 0;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 440px));
+  justify-content: center;
+  gap: 24px;
+  margin: 36px 0;
 }
 
-.photo-item {
-  background: #f9f9f9;
-  border-radius: 8px;
-  padding: 15px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+.article-content :deep(.photo-item) {
+  background: #fafbfc;
+  border-radius: 10px;
+  padding: 16px;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.06);
   transition: transform 0.3s ease, box-shadow 0.3s ease;
 }
 
-.photo-item:hover {
-  transform: translateY(-5px);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+.article-content :deep(.photo-item:hover) {
+  transform: translateY(-4px);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.1);
 }
 
-.photo-item img {
+.article-content :deep(.photo-item img) {
+  display: block;
   width: 100%;
   height: auto;
   border-radius: 6px;
-  margin-bottom: 10px;
-  object-fit: cover;
+  margin-bottom: 12px;
 }
 
-.photo-caption {
+.article-content :deep(.photo-caption) {
   text-align: center;
   font-size: 0.9rem;
-  color: #666;
+  color: #7a8da5;
   margin: 0;
+  line-height: 1.5;
 }
 
 .article-footer {

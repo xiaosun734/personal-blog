@@ -15,7 +15,7 @@
         <h2 class="article-title">{{ article.title }}</h2>
         <div class="article-meta">
           <span class="article-author">{{ article.author }}</span>
-          <span class="article-date">{{ article.date }}</span>
+          <span class="article-date">{{ formatDate(article.date) }}</span>
           <span class="article-category">{{ article.category }}</span>
         </div>
         <p class="article-desc">{{ article.desc }}</p>
@@ -38,6 +38,7 @@ import type { ArticleSummary } from '@/api/articles'
 import ClassificationComponent from '../components/classification-component.vue'
 import BackButton from '../components/back-button.vue'
 import HeaderComponent from '../components/header-component.vue'
+import { formatDate } from '@/utils/format'
 
 const router = useRouter()
 const route = useRoute()

@@ -396,12 +396,14 @@ onBeforeUnmount(() => {
 }
 
 .posts-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  display: flex;
+  flex-wrap: nowrap;
+  justify-content: center;
   gap: 30px;
 }
 
 .post-card {
+  flex: 0 0 300px;
   border: 1px solid rgba(189, 195, 199, 0.3);
   border-radius: 12px;
   padding: 25px;
