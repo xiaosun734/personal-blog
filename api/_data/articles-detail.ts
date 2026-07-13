@@ -1,5 +1,13 @@
 // 由 scripts/generate-articles.mjs 自动生成，请勿手动编辑
-import type { ArticleFrontmatter } from '../_utils/markdown'
+
+export interface ArticleFrontmatter {
+  id: number
+  title: string
+  author: string
+  desc: string
+  date: string
+  category: string
+}
 
 interface ArticleDetail extends ArticleFrontmatter {
   content: string

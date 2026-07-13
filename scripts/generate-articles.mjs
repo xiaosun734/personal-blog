@@ -39,7 +39,15 @@ async function main() {
   // 文章列表（不含 content，节省体积）
   const list = articles.map(({ content, ...rest }) => rest)
   const listContent = `// 由 scripts/generate-articles.mjs 自动生成，请勿手动编辑
-import type { ArticleFrontmatter } from '../_utils/markdown'
+
+export interface ArticleFrontmatter {
+  id: number
+  title: string
+  author: string
+  desc: string
+  date: string
+  category: string
+}
 
 const list: (ArticleFrontmatter & { link: string })[] = ${JSON.stringify(list.map(a => ({ ...a, link: '#' })), null, 2)}
 
@@ -53,7 +61,15 @@ export default list
     detailMap[a.id] = a
   }
   const detailContent = `// 由 scripts/generate-articles.mjs 自动生成，请勿手动编辑
-import type { ArticleFrontmatter } from '../_utils/markdown'
+
+export interface ArticleFrontmatter {
+  id: number
+  title: string
+  author: string
+  desc: string
+  date: string
+  category: string
+}
 
 interface ArticleDetail extends ArticleFrontmatter {
   content: string
