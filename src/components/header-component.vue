@@ -160,8 +160,9 @@ const triggerIndicatorAnimation = () => {
 const syncScrollBehavior = () => {
   if (shouldHideOnScroll.value) {
     bindScrollListener()
-    lastScrollTop.value = window.pageYOffset || document.documentElement.scrollTop || 0
-    handleScroll()
+    const scrollTop = window.pageYOffset || document.documentElement.scrollTop || 0
+    lastScrollTop.value = scrollTop
+    headerHidden.value = scrollTop > scrollThreshold
     return
   }
 

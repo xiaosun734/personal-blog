@@ -19,10 +19,12 @@
       <PageMagnifier :radius="60" :zoom-level="1.8">
         <TextTemplate :article="article" />
         <ClassificationComponent />
+        <CommentSection :article-id="article.id" />
 
         <template #scroll-overlay>
           <div class="magnifier-scroll-stage">
             <ArticlePanel :article="article" />
+            <CommentSection :article-id="article.id" />
           </div>
         </template>
 
@@ -46,6 +48,7 @@ import BackButton from '../components/back-button.vue'
 import HeaderComponent from '../components/header-component.vue'
 import ArticlePanel from '../components/article-panel.vue'
 import PageMagnifier from '../components/page-magnifier.vue'
+import CommentSection from '../components/comment-section.vue'
 import { fetchArticleById } from '@/api/articles'
 import type { Article } from '@/types/article'
 

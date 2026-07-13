@@ -9,7 +9,23 @@ function localApiPlugin() {
     configureServer(server: any) {
       server.middlewares.use('/api', async (req: any, res: any, _next: any) => {
         try {
-          const mod = await server.ssrLoadModule('./api/articles.ts')
+          const { parse } = await import('node:url')
+          const { pathname } = parse(req.url || '', true)
+
+          const ROUTES: Record<string, string> = {
+            '/articles': './api/articles.ts',
+            '/comments': './api/comments.ts',
+          }
+
+          const handlerPath = ROUTES[pathname || '']
+          if (!handlerPath) {
+            res.statusCode = 404
+            res.setHeader('Content-Type', 'application/json')
+            res.end(JSON.stringify({ error: `未找到 API: ${pathname}` }))
+            return
+          }
+
+          const mod = await server.ssrLoadModule(handlerPath)
           await mod.default(req, res)
         } catch (e) {
           console.error('本地 API 错误：', e)
