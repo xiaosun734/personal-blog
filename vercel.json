@@ -4,5 +4,13 @@
   "rewrites": [
     { "source": "/api/(.*)", "destination": "/api/$1" },
     { "source": "/((?!api).*)", "destination": "/index.html" }
-  ]
+  ],
+  "functions": {
+    "api/articles.ts": {
+      "includeFiles": "articles/**"
+    },
+    "api/comments.ts": {
+      "includeFiles": "comments/**"
+    }
+  }
 }
