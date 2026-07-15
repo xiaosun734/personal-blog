@@ -2,6 +2,11 @@
   "buildCommand": "pnpm run build",
   "outputDirectory": "dist",
   "installCommand": "pnpm install",
+  "functions": {
+    "api/*.ts": {
+      "includeFiles": "lib/**"
+    }
+  },
   "rewrites": [
     { "source": "/((?!api).*)", "destination": "/index.html" }
   ]

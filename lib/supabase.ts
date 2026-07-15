@@ -4,28 +4,25 @@ import { resolve } from 'path'
 
 let client: SupabaseClient | null = null
 
-/** 从 .env 文件加载环境变量（本地开发时 Vite SSR 不会自动注入非 VITE_ 前缀的变量） */
-function loadEnvFromFile() {
+/** Vercel 生产环境从 process.env 读取，本地开发从 .env 文件加载 */
+function getEnv(key: string): string | undefined {
+  // Vercel 会注入环境变量，优先读取
+  if (process.env[key]) return process.env[key]
+  // 本地开发时 fallback 到 .env 文件
   const envPath = resolve(process.cwd(), '.env')
-  if (!existsSync(envPath)) return
+  if (!existsSync(envPath)) return undefined
   const content = readFileSync(envPath, 'utf-8')
   for (const line of content.split('\n')) {
     const trimmed = line.trim()
     if (!trimmed || trimmed.startsWith('#')) continue
     const eqIdx = trimmed.indexOf('=')
     if (eqIdx === -1) continue
-    const key = trimmed.slice(0, eqIdx).trim()
-    const value = trimmed.slice(eqIdx + 1).trim()
-    if (!process.env[key]) {
-      process.env[key] = value
+    const k = trimmed.slice(0, eqIdx).trim()
+    const v = trimmed.slice(eqIdx + 1).trim()
+    if (!process.env[k]) {
+      process.env[k] = v
     }
   }
-}
-
-function getEnv(key: string): string | undefined {
-  // 优先用 process.env（Vercel 生产环境会注入），其次从 .env 文件加载
-  if (process.env[key]) return process.env[key]
-  loadEnvFromFile()
   return process.env[key]
 }
 

@@ -1,6 +1,6 @@
 import type { IncomingMessage, ServerResponse } from 'http'
 import { parse as parseUrl } from 'url'
-import { getSupabase } from './_utils/supabase'
+import { getSupabase } from '../lib/supabase'
 
 export default async function handler(req: IncomingMessage, res: ServerResponse) {
   const { query } = parseUrl(req.url || '', true)
