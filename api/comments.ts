@@ -1,6 +1,6 @@
 import type { IncomingMessage, ServerResponse } from 'http'
 import { parse as parseUrl } from 'url'
-import { getSupabase } from '../lib/supabase'
+import { getSupabase } from '../lib/supabase.js'
 
 /** 读取请求体 JSON */
 function readBody(req: IncomingMessage): Promise<string> {
