@@ -16,6 +16,9 @@ pnpm-debug.log*
 
 .vercel
 
+# 文章源文件（已存入 Supabase，仅本地编辑用）
+articles/
+
 # Editor directories and files
 .idea
 .vscode
