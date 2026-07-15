@@ -1,6 +1,6 @@
 import type { IncomingMessage, ServerResponse } from 'http'
 import { parse as parseUrl } from 'url'
-import { loadComments, saveComment, type CommentData } from './_utils/comment-store'
+import { getSupabase } from './_utils/supabase'
 
 /** 读取请求体 JSON */
 function readBody(req: IncomingMessage): Promise<string> {
@@ -13,8 +13,10 @@ function readBody(req: IncomingMessage): Promise<string> {
 }
 
 export default async function handler(req: IncomingMessage, res: ServerResponse) {
-  const { query, pathname } = parseUrl(req.url || '', true)
+  const { query } = parseUrl(req.url || '', true)
   const method = req.method || 'GET'
+
+  const supabase = getSupabase()
 
   // ---- GET /api/comments?articleId=1 ----
   if (method === 'GET') {
@@ -26,16 +28,38 @@ export default async function handler(req: IncomingMessage, res: ServerResponse)
       return
     }
 
-    const comments = await loadComments(articleId)
+    const { data: comments, error } = await supabase
+      .from('comments')
+      .select('id, article_id, nickname, email, content, date')
+      .eq('article_id', articleId)
+      .order('date', { ascending: false })
+
+    if (error) {
+      res.statusCode = 500
+      res.setHeader('Content-Type', 'application/json')
+      res.end(JSON.stringify({ error: 'Failed to fetch comments' }))
+      return
+    }
+
+    // 字段名映射：article_id → articleId
+    const mapped = (comments || []).map((c: Record<string, unknown>) => ({
+      id: c.id,
+      articleId: c.article_id,
+      nickname: c.nickname,
+      email: c.email,
+      content: c.content,
+      date: c.date,
+    }))
+
     res.setHeader('Content-Type', 'application/json')
-    res.end(JSON.stringify({ comments }))
+    res.end(JSON.stringify({ comments: mapped }))
     return
   }
 
   // ---- POST /api/comments ----
   if (method === 'POST') {
     const raw = await readBody(req)
-    let body: Partial<CommentData>
+    let body: Record<string, unknown>
     try {
       body = JSON.parse(raw)
     } catch {
@@ -54,16 +78,35 @@ export default async function handler(req: IncomingMessage, res: ServerResponse)
       return
     }
 
-    const comment: CommentData = {
-      id: `${Date.now()}_${Math.random().toString(36).slice(2, 8)}`,
-      articleId,
-      nickname,
-      email: body.email || '',
-      content,
-      date: new Date().toISOString(),
+    const newComment = {
+      article_id: Number(articleId),
+      nickname: String(nickname),
+      email: String(body.email || ''),
+      content: String(content),
     }
 
-    await saveComment(comment)
+    const { data: inserted, error } = await supabase
+      .from('comments')
+      .insert(newComment)
+      .select('id, article_id, nickname, email, content, date')
+      .single()
+
+    if (error || !inserted) {
+      res.statusCode = 500
+      res.setHeader('Content-Type', 'application/json')
+      res.end(JSON.stringify({ error: 'Failed to save comment' }))
+      return
+    }
+
+    // 字段名映射：article_id → articleId
+    const comment = {
+      id: inserted.id,
+      articleId: inserted.article_id,
+      nickname: inserted.nickname,
+      email: inserted.email,
+      content: inserted.content,
+      date: inserted.date,
+    }
 
     res.setHeader('Content-Type', 'application/json')
     res.end(JSON.stringify({ comment }))

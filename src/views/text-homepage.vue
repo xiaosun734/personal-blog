@@ -53,7 +53,6 @@ const articleList = computed<ArticleSummary[]>(() => {
 })
 
 const retry = () => {
-  state.error = null
   fetchArticleSummaries()
 }
 
