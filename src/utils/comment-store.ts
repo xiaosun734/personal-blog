@@ -7,13 +7,3 @@ export async function getComments(articleId: number): Promise<Comment[]> {
   const data = await res.json()
   return (data.comments as Comment[]) || []
 }
-
-/** 新增一条评论，返回是否成功 */
-export async function addComment(comment: Comment): Promise<boolean> {
-  const res = await fetch('/api/comments', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(comment),
-  })
-  return res.ok
-}

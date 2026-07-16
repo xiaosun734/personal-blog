@@ -2,10 +2,17 @@
   <div class="comment-section">
     <h2 class="section-title">评论</h2>
 
-    <!-- 发表评论表单 -->
-    <form class="comment-form" @submit.prevent="handleSubmit">
+    <!-- ====== 已登录：评论表单 ====== -->
+    <form v-if="isAuthenticated" class="comment-form" @submit.prevent="handleSubmit">
+      <!-- 当前用户信息条 -->
+      <div class="current-user-bar">
+        <div class="comment-avatar" :style="{ backgroundColor: avatarColor(user?.username || '') }">
+          {{ userInitial }}
+        </div>
+        <span class="current-user-name">{{ user?.username }}</span>
+      </div>
+
       <div class="form-group">
-        <label class="form-label" for="comment-content">评论内容</label>
         <textarea
           id="comment-content"
           v-model="form.content"
@@ -25,7 +32,16 @@
       </button>
     </form>
 
-    <!-- 评论列表 -->
+    <!-- ====== 未登录：登录提示 ====== -->
+    <div v-else class="login-prompt">
+      <div class="login-prompt-icon">🔒</div>
+      <p class="login-prompt-text">请登录后发表评论</p>
+      <button type="button" class="login-prompt-btn" @click="openAuthModal('login')">
+        去登录
+      </button>
+    </div>
+
+    <!-- ====== 评论列表 ====== -->
     <div class="comment-divider"></div>
 
     <div v-if="comments.length === 0" class="empty-state">
@@ -56,28 +72,34 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, onMounted, watch } from 'vue'
+import { ref, reactive, computed, onMounted, watch } from 'vue'
 import type { Comment } from '@/types/comment'
-import { getComments, addComment } from '@/utils/comment-store'
+import { getComments } from '@/utils/comment-store'
 import { formatDate } from '@/utils/format'
+import { useAuth } from '@/composables/useAuth'
 
 const props = defineProps<{
   articleId: number
 }>()
 
+const { isAuthenticated, user, openAuthModal, getAccessToken } = useAuth()
+
 const comments = ref<Comment[]>([])
 
+// ---- 用户信息 ----
+const userInitial = computed(() => {
+  if (!user.value) return '?'
+  return user.value.username.charAt(0).toUpperCase()
+})
+
 // ---- 表单 ----
-const DEFAULT_NICKNAME = '用户'
 const initialForm = { content: '' }
 const form = reactive({ ...initialForm })
 const errors = reactive({ content: '' })
 const submitting = ref(false)
 
-/** 校验表单，返回是否通过 */
 function validate(): boolean {
   let valid = true
-
   errors.content = ''
 
   if (!form.content) {
@@ -92,29 +114,44 @@ function validate(): boolean {
 }
 
 async function handleSubmit() {
-  if (!validate()) return
+  if (!validate() || !user.value) return
 
   submitting.value = true
 
-  const ok = await addComment({
-    id: '',
-    articleId: props.articleId,
-    nickname: DEFAULT_NICKNAME,
-    email: '',
-    content: form.content,
-    date: '',
-  })
+  const accessToken = getAccessToken()
 
-  if (!ok) {
+  try {
+    const res = await fetch('/api/comments', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {})
+      },
+      body: JSON.stringify({
+        articleId: props.articleId,
+        nickname: user.value.username,
+        email: user.value.email,
+        content: form.content,
+      }),
+    })
+
+    if (!res.ok) {
+      // 尝试解析错误消息
+      const data = await res.json().catch(() => ({ error: '提交失败' }))
+      errors.content = data.error || '评论提交失败，请稍后重试'
+      submitting.value = false
+      return
+    }
+
+    Object.assign(form, initialForm)
+    errors.content = ''
     submitting.value = false
-    return
+
+    await loadComments()
+  } catch {
+    errors.content = '网络错误，请稍后重试'
+    submitting.value = false
   }
-
-  Object.assign(form, initialForm)
-  errors.content = ''
-  submitting.value = false
-
-  await loadComments()
 }
 
 // ---- 加载 ----
@@ -126,7 +163,6 @@ onMounted(() => {
   loadComments()
 })
 
-// 文章切换时重新加载
 watch(() => props.articleId, async () => {
   await loadComments()
 })
@@ -161,6 +197,64 @@ function avatarColor(name: string): string {
   border-bottom: 2px solid #d9e5f3;
 }
 
+/* ====== 当前用户信息条 ====== */
+.current-user-bar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 16px;
+  padding-bottom: 14px;
+  border-bottom: 1px solid #f0f4f8;
+}
+
+.current-user-name {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: #2c3e50;
+}
+
+/* ====== 登录提示 ====== */
+.login-prompt {
+  background: #ffffff;
+  border-radius: 12px;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
+  padding: 40px 32px;
+  text-align: center;
+}
+
+.login-prompt-icon {
+  font-size: 2.5rem;
+  margin-bottom: 12px;
+}
+
+.login-prompt-text {
+  font-size: 0.95rem;
+  color: #5f7184;
+  margin: 0 0 20px;
+}
+
+.login-prompt-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: 40px;
+  padding: 0 32px;
+  background: #4a90e2;
+  color: #fff;
+  font-size: 0.95rem;
+  font-weight: 600;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  font-family: inherit;
+  transition: background 0.25s ease, transform 0.15s ease;
+}
+
+.login-prompt-btn:hover {
+  background: #3a7bd5;
+  transform: translateY(-1px);
+}
+
 /* ====== 表单 ====== */
 .comment-form {
   background: #ffffff;
@@ -172,13 +266,6 @@ function avatarColor(name: string): string {
 .form-group {
   display: flex;
   flex-direction: column;
-}
-
-.form-label {
-  font-size: 0.9rem;
-  font-weight: 600;
-  color: #34495e;
-  margin-bottom: 6px;
 }
 
 .form-textarea {
