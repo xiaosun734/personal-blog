@@ -108,6 +108,9 @@
                 <button type="button" class="forgot-link" @click="handleForgotPassword">忘记密码？</button>
               </div>
 
+              <!-- 服务端错误提示 -->
+              <div v-if="serverError" class="server-error">{{ serverError }}</div>
+
               <!-- 提交按钮 -->
               <button type="submit" class="submit-btn" :disabled="submitting">
                 <span v-if="submitting" class="btn-spinner"></span>
@@ -143,7 +146,8 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, computed, watch } from 'vue'
+import { ref, reactive, watch } from 'vue'
+import { useAuth } from '@/composables/useAuth'
 
 // ========== Props & Emits ==========
 const props = defineProps<{
@@ -152,13 +156,15 @@ const props = defineProps<{
 
 const emit = defineEmits<{
   close: []
-  submit: [data: { email: string; password: string; username?: string; mode: 'login' | 'register' }]
 }>()
+
+const { login, register } = useAuth()
 
 // ========== State ==========
 const isLogin = ref(true)
 const showPassword = ref(false)
 const submitting = ref(false)
+const serverError = ref('')
 
 interface FormData {
   username: string
@@ -205,6 +211,7 @@ function resetForm() {
   errors.email = ''
   errors.password = ''
   errors.confirmPassword = ''
+  serverError.value = ''
   submitting.value = false
 }
 
@@ -258,36 +265,36 @@ async function handleSubmit() {
   if (!validate() || submitting.value) return
 
   submitting.value = true
+  serverError.value = ''
 
-  // 模拟网络请求延迟（后续替换为实际 API 调用）
-  emit('submit', {
-    email: form.email,
-    password: form.password,
-    username: !isLogin.value ? form.username : undefined,
-    mode: isLogin.value ? 'login' : 'register'
-  })
+  let result: { success: boolean; error?: string }
+
+  if (isLogin.value) {
+    result = await login(form.email, form.password)
+  } else {
+    result = await register(form.username, form.email, form.password)
+  }
+
+  if (result.success) {
+    emit('close')
+  } else {
+    serverError.value = result.error || '操作失败，请稍后重试'
+    submitting.value = false
+  }
 }
 
 function handleForgotPassword() {
   // 忘记密码（后续实现）
 }
 
-// 弹窗关闭时重置
+// 弹窗关闭时延迟重置（等动画结束）
 watch(() => props.visible, (val) => {
   if (!val) {
-    // 延迟重置，等动画结束
     setTimeout(() => {
       isLogin.value = true
       resetForm()
       showPassword.value = false
     }, 300)
-  }
-})
-
-// 暴露 submit 完成后的回调用法（供父组件调用）
-defineExpose({
-  finishSubmit() {
-    submitting.value = false
   }
 })
 </script>
@@ -523,6 +530,17 @@ defineExpose({
 .submit-btn:disabled {
   opacity: 0.7;
   cursor: not-allowed;
+}
+
+/* ========== 服务端错误 ========== */
+.server-error {
+  padding: 10px 14px;
+  border-radius: 10px;
+  font-size: 0.84rem;
+  color: #b91c1c;
+  background: #fef2f2;
+  border: 1px solid #fecaca;
+  line-height: 1.5;
 }
 
 .btn-spinner {
