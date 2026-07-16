@@ -1,6 +1,6 @@
 <template>
   <div class="text-read">
-    <HeaderComponent />
+    <HeaderComponent v-if="showHeader" />
     <ArticlePanel :article="article" />
   </div>
 </template>
@@ -10,9 +10,12 @@ import HeaderComponent from './header-component.vue'
 import ArticlePanel from './article-panel.vue'
 import type { Article } from '@/types/article'
 
-defineProps<{
+withDefaults(defineProps<{
   article: Article
-}>()
+  showHeader?: boolean
+}>(), {
+  showHeader: true
+})
 </script>
 
 <style scoped>

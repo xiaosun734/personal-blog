@@ -42,7 +42,7 @@ defineProps<{
 .content {
   width: min(800px, 90vw);
   margin: 0 auto;
-  padding: calc(72px + 40px) 0 60px;
+  padding: calc(72px + 60px) 0 60px;
 }
 
 .article {
@@ -206,7 +206,7 @@ defineProps<{
 
 @media (max-width: 768px) {
   .content {
-    padding: calc(72px + 20px) 0 40px;
+    padding: 20px 0 40px;
   }
 
   .article {

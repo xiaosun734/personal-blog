@@ -38,8 +38,7 @@
 
     <!-- 手机端：不使用放大镜，直接渲染 -->
     <template v-else-if="article && isMobile">
-      <HeaderComponent />
-      <TextTemplate :article="article" />
+      <TextTemplate :article="article" :show-header="false" />
       <ClassificationComponent :inline="true" />
       <CommentSection :article-id="article.id" />
     </template>
