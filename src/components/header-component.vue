@@ -3,20 +3,48 @@
     <header class="header" :class="{ 'header-hidden': headerHidden }">
       <div class="container">
         <router-link to="/" class="logo">Sunn</router-link>
-        <nav ref="navEl" class="nav" :class="{ 'nav-sliding': isIndicatorAnimating }">
+        <div class="header-right">
+          <nav ref="navEl" class="nav" :class="{ 'nav-sliding': isIndicatorAnimating }">
+            <button
+              v-for="(link, index) in navLinks"
+              :key="link.to"
+              :ref="(el) => { if (el) navLinkEls[index] = el }"
+              type="button"
+              class="nav-link"
+              :class="{ 'is-active': index === displayNavIndex }"
+              @click="handleNavClick(link, index)"
+            >
+              {{ link.label }}
+            </button>
+            <span class="nav-indicator" :style="navIndicatorStyle"></span>
+          </nav>
+
+          <!-- 登录/用户按钮 -->
           <button
-            v-for="(link, index) in navLinks"
-            :key="link.to"
-            :ref="(el) => { if (el) navLinkEls[index] = el }"
+            v-if="!isAuthenticated"
             type="button"
-            class="nav-link"
-            :class="{ 'is-active': index === displayNavIndex }"
-            @click="handleNavClick(link, index)"
+            class="auth-btn"
+            @click="openAuthModal('login')"
           >
-            {{ link.label }}
+            登录
           </button>
-          <span class="nav-indicator" :style="navIndicatorStyle"></span>
-        </nav>
+          <div v-else class="user-menu">
+            <button type="button" class="user-avatar-btn" @click="toggleUserMenu">
+              <span class="user-avatar-text">{{ userInitial }}</span>
+            </button>
+            <transition name="menu-fade">
+              <div v-if="userMenuOpen" class="user-dropdown" @click.stop>
+                <div class="user-dropdown-header">
+                  <span class="user-name">{{ user?.username }}</span>
+                  <span class="user-email">{{ user?.email }}</span>
+                </div>
+                <button type="button" class="user-dropdown-item logout-btn" @click="handleLogout">
+                  退出登录
+                </button>
+              </div>
+            </transition>
+          </div>
+        </div>
       </div>
     </header>
   </div>
@@ -25,6 +53,7 @@
 <script setup lang="ts">
 import { ref, computed, watch, onMounted, onBeforeUnmount, nextTick } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
+import { useAuth } from '@/composables/useAuth'
 import debounce from '@/utils/debounce'
 
 interface NavLink {
@@ -35,6 +64,40 @@ interface NavLink {
 
 const router = useRouter()
 const route = useRoute()
+const { isAuthenticated, user, openAuthModal, logout } = useAuth()
+
+// 用户菜单
+const userMenuOpen = ref(false)
+
+const userInitial = computed(() => {
+  if (!user.value) return '?'
+  return user.value.username.charAt(0).toUpperCase()
+})
+
+function toggleUserMenu() {
+  userMenuOpen.value = !userMenuOpen.value
+}
+
+function handleLogout() {
+  userMenuOpen.value = false
+  logout()
+}
+
+// 点击外部关闭用户菜单
+function handleClickOutside(event: MouseEvent) {
+  // 在 template 层通过 @click.stop 阻止冒泡到 document
+  userMenuOpen.value = false
+}
+
+// 监听用户菜单打开的全局点击
+watch(userMenuOpen, (open: boolean) => {
+  if (open) {
+    // 延迟绑定，避免同时触发的 click 事件立即关闭
+    setTimeout(() => {
+      document.addEventListener('click', handleClickOutside, { once: true })
+    }, 100)
+  }
+})
 
 // Template refs
 const navEl = ref<HTMLElement | null>(null)
@@ -362,6 +425,145 @@ onBeforeUnmount(() => {
   }
 }
 
+/* ========== Header 右侧区域 ========== */
+.header-right {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-shrink: 0;
+}
+
+/* ========== 登录按钮 ========== */
+.auth-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: 42px;
+  padding: 0 22px;
+  border: 1.5px solid #5b8def;
+  border-radius: 999px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  font-family: inherit;
+  color: #5b8def;
+  background: transparent;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all 0.25s ease;
+}
+
+.auth-btn:hover {
+  color: #fff;
+  background: #5b8def;
+  box-shadow: 0 4px 14px rgba(91, 141, 239, 0.3);
+}
+
+/* ========== 用户菜单 ========== */
+.user-menu {
+  position: relative;
+}
+
+.user-avatar-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 42px;
+  height: 42px;
+  border: 1.5px solid #e1e8ed;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #5b8def, #4a7de0);
+  color: #fff;
+  font-size: 1rem;
+  font-weight: 700;
+  font-family: inherit;
+  cursor: pointer;
+  transition: box-shadow 0.25s ease, transform 0.25s ease;
+}
+
+.user-avatar-btn:hover {
+  box-shadow: 0 4px 14px rgba(91, 141, 239, 0.35);
+  transform: translateY(-1px);
+}
+
+.user-avatar-text {
+  line-height: 1;
+}
+
+/* ========== 用户下拉菜单 ========== */
+.user-dropdown {
+  position: absolute;
+  right: 0;
+  top: calc(100% + 8px);
+  min-width: 200px;
+  padding: 6px;
+  border: 1px solid #e1e8ed;
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.98);
+  backdrop-filter: blur(18px);
+  -webkit-backdrop-filter: blur(18px);
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.1);
+  z-index: 200;
+}
+
+.user-dropdown-header {
+  padding: 12px 14px 10px;
+  border-bottom: 1px solid #f0f4f8;
+}
+
+.user-name {
+  display: block;
+  font-size: 0.92rem;
+  font-weight: 600;
+  color: #1f3246;
+  line-height: 1.3;
+}
+
+.user-email {
+  display: block;
+  font-size: 0.78rem;
+  color: #94a3b8;
+  margin-top: 2px;
+}
+
+.user-dropdown-item {
+  display: block;
+  width: 100%;
+  padding: 10px 14px;
+  border: none;
+  border-radius: 10px;
+  font-size: 0.88rem;
+  font-family: inherit;
+  background: transparent;
+  cursor: pointer;
+  text-align: left;
+  transition: background 0.2s ease;
+}
+
+.user-dropdown-item:hover {
+  background: rgba(0, 0, 0, 0.04);
+}
+
+.logout-btn {
+  color: #e74c3c;
+  margin-top: 2px;
+}
+
+/* 下拉菜单动画 */
+.menu-fade-enter-active {
+  transition: opacity 0.2s ease, transform 0.22s cubic-bezier(0.22, 1, 0.36, 1);
+}
+.menu-fade-leave-active {
+  transition: opacity 0.15s ease, transform 0.15s ease;
+}
+.menu-fade-enter-from {
+  opacity: 0;
+  transform: translateY(-6px) scale(0.96);
+}
+.menu-fade-leave-to {
+  opacity: 0;
+  transform: translateY(-4px) scale(0.97);
+}
+
 @media (max-width: 768px) {
   .header {
     height: auto;
@@ -384,6 +586,17 @@ onBeforeUnmount(() => {
     padding: 0 12px;
     line-height: 38px;
     font-size: 0.9rem;
+  }
+
+  .header-right {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .auth-btn {
+    height: 38px;
+    padding: 0 18px;
+    font-size: 0.85rem;
   }
 }
 </style>
