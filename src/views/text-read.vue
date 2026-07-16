@@ -15,7 +15,8 @@
     </div>
 
     <!-- 正常渲染 -->
-    <template v-else-if="article">
+    <!-- 桌面端：使用放大镜组件 -->
+    <template v-else-if="article && !isMobile">
       <PageMagnifier :radius="60" :zoom-level="1.8">
         <TextTemplate :article="article" />
         <ClassificationComponent />
@@ -35,12 +36,20 @@
       </PageMagnifier>
     </template>
 
+    <!-- 手机端：不使用放大镜，直接渲染 -->
+    <template v-else-if="article && isMobile">
+      <HeaderComponent />
+      <TextTemplate :article="article" />
+      <ClassificationComponent :inline="true" />
+      <CommentSection :article-id="article.id" />
+    </template>
+
     <BackButton />
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, watch, onMounted } from 'vue'
+import { ref, watch, onMounted, onBeforeUnmount } from 'vue'
 import { useRoute } from 'vue-router'
 import TextTemplate from '../components/text-template.vue'
 import ClassificationComponent from '../components/classification-component.vue'
@@ -57,6 +66,14 @@ const route = useRoute()
 const article = ref<Article | null>(null)
 const isLoading = ref(false)
 const notFound = ref(false)
+
+// Mobile detection
+const isMobile = ref(false)
+const MOBILE_BREAKPOINT = 768
+
+const updateIsMobile = () => {
+  isMobile.value = window.innerWidth <= MOBILE_BREAKPOINT
+}
 
 const loadArticle = async () => {
   const articleId = Number(route.params.id)
@@ -80,6 +97,12 @@ const loadArticle = async () => {
 
 onMounted(() => {
   loadArticle()
+  updateIsMobile()
+  window.addEventListener('resize', updateIsMobile)
+})
+
+onBeforeUnmount(() => {
+  window.removeEventListener('resize', updateIsMobile)
 })
 
 watch(() => route.params.id, () => {

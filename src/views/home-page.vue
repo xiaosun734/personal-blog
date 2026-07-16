@@ -92,18 +92,30 @@ const rootEl = ref<HTMLElement | null>(null)
 // Section snap (handles scroll + visibility + snap internally via onMounted/onBeforeUnmount)
 const { sectionStates } = useSectionSnap(rootEl, ['hero', 'latest', 'about'], 4)
 
-// Latest posts
+// Mobile detection
+const isMobile = ref(false)
+const MOBILE_BREAKPOINT = 768
+
+const updateIsMobile = () => {
+  isMobile.value = window.innerWidth <= MOBILE_BREAKPOINT
+}
+
+// Latest posts (1 on mobile, 3 on desktop)
 const posts = computed<ArticleSummary[]>(() => {
   const s = getArticlesState()
   if (!s.fetched) return []
-  return [...s.summaries]
-    .sort((a, b) => a.id - b.id)
-    .slice(-3)
-    .reverse()
+  const sorted = [...s.summaries].sort((a, b) => a.id - b.id).reverse()
+  return isMobile.value ? sorted.slice(0, 1) : sorted.slice(0, 3)
 })
 
 onMounted(() => {
   fetchArticleSummaries()
+  updateIsMobile()
+  window.addEventListener('resize', updateIsMobile)
+})
+
+onBeforeUnmount(() => {
+  window.removeEventListener('resize', updateIsMobile)
 })
 
 // Gradient card state
@@ -529,8 +541,15 @@ onBeforeUnmount(() => {
     text-align: center;
   }
 
-  .posts-grid {
-    grid-template-columns: 1fr;
+  .post-card {
+    flex: 0 0 auto;
+    width: 88%;
+    max-width: 360px;
+    margin: 0 auto;
+  }
+
+  .post-card:nth-child(n+2) {
+    display: none;
   }
 }
 </style>

@@ -601,5 +601,69 @@ onBeforeUnmount(() => {
   .links-grid {
     grid-template-columns: 1fr;
   }
+
+  /* 联系方式区域整体下移 */
+  .contact-section {
+    padding-top: 18vh;
+  }
+
+  .contact-section .section-title {
+    margin-bottom: 24px;
+    font-size: 22px;
+  }
+
+  /* 联系卡片缩小 */
+  .contact-card {
+    padding: 16px;
+  }
+
+  .contact-card:hover {
+    transform: translateY(-4px) scale(1.02);
+  }
+
+  .contact-card:has(+ .contact-card:hover),
+  .contact-card:hover + .contact-card {
+    transform: none;
+  }
+
+  .contact-icon {
+    margin-bottom: 10px;
+    font-size: 18px;
+  }
+
+  .contact-card h3 {
+    font-size: 16px;
+  }
+
+  .contact-card p {
+    font-size: 13px;
+  }
+
+  /* 友链区域整体下移 */
+  .links-section {
+    padding-top: 18vh;
+  }
+
+  .links-section .section-title {
+    margin-bottom: 24px;
+    font-size: 22px;
+  }
+
+  /* 友链卡片缩小 */
+  .link-item {
+    padding: 14px;
+  }
+
+  .link-item h3 {
+    font-size: 16px;
+  }
+
+  .link-item p {
+    font-size: 13px;
+  }
+
+  .link-item:hover {
+    transform: translateY(-3px);
+  }
 }
 </style>

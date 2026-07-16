@@ -320,6 +320,7 @@ watch(() => props.visible, (val) => {
   width: 100%;
   max-width: 420px;
   padding: 40px 32px 32px;
+  box-sizing: border-box;
   border-radius: 20px;
   background: rgba(255, 255, 255, 0.98);
   backdrop-filter: blur(20px);
@@ -692,13 +693,69 @@ watch(() => props.visible, (val) => {
 
 /* ========== 响应式 ========== */
 @media (max-width: 480px) {
+  .auth-overlay {
+    padding: 24px 16px;
+  }
+
   .auth-modal {
-    padding: 32px 20px 24px;
+    max-width: none;
+    width: 88%;
+    padding: 24px 16px 20px;
     border-radius: 16px;
   }
 
+  .modal-close {
+    top: 10px;
+    right: 10px;
+    width: 30px;
+    height: 30px;
+  }
+
   .modal-title {
-    font-size: 1.4rem;
+    font-size: 1.3rem;
+  }
+
+  .modal-subtitle {
+    font-size: 0.82rem;
+    margin-bottom: 22px;
+  }
+
+  .auth-form {
+    gap: 14px;
+  }
+
+  .form-label {
+    font-size: 0.8rem;
+  }
+
+  .form-input {
+    padding: 10px 14px;
+    font-size: 0.88rem;
+    border-radius: 10px;
+  }
+
+  .submit-btn {
+    padding: 11px 0;
+    font-size: 0.95rem;
+    border-radius: 10px;
+  }
+
+  .switch-mode {
+    margin-top: 18px;
+    font-size: 0.82rem;
+  }
+
+  .switch-btn {
+    font-size: 0.82rem;
+  }
+
+  .divider {
+    margin: 16px 0 12px;
+  }
+
+  .social-btn {
+    padding: 8px 0;
+    font-size: 0.84rem;
   }
 }
 </style>

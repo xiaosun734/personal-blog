@@ -1,5 +1,9 @@
 <template>
-  <div class="classification-container" :style="{ transform: `translateY(${translateY}px)` }">
+  <div
+    class="classification-container"
+    :class="{ 'classification-inline': inline }"
+    :style="{ transform: `translateY(${translateY}px)` }"
+  >
     <h2 class="classification-title">文章分类</h2>
     <div class="classification-list">
       <div 
@@ -26,6 +30,12 @@ interface Category {
 }
 
 const router = useRouter()
+
+const props = withDefaults(defineProps<{
+  inline?: boolean
+}>(), {
+  inline: false
+})
 
 const categories = ref<Category[]>([])
 const translateY = ref(0)
@@ -159,5 +169,44 @@ onBeforeUnmount(() => {
   padding: 2px 10px;
   font-size: 12px;
   font-weight: 500;
+}
+
+/* 手机端：内联模式，跟随文档流 */
+.classification-inline {
+  position: static;
+  width: min(800px, 90vw);
+  margin: 40px auto 0;
+  right: auto;
+  top: auto;
+}
+
+.classification-inline .classification-list {
+  flex-direction: row;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.classification-inline .classification-item {
+  flex: 1 1 auto;
+  min-width: 120px;
+  justify-content: center;
+}
+
+@media (max-width: 768px) {
+  .classification-inline {
+    width: 88vw;
+    margin: 32px auto 0;
+    padding: 16px;
+  }
+
+  .classification-inline .classification-title {
+    font-size: 16px;
+    margin-bottom: 12px;
+  }
+
+  .classification-inline .classification-item {
+    padding: 10px 14px;
+    font-size: 13px;
+  }
 }
 </style>
