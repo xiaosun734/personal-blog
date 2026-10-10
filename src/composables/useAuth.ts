@@ -178,6 +178,48 @@ export function useAuth() {
     }
   }
 
+  // ========== 忘记密码 ==========
+  async function forgotPassword(email: string): Promise<{ success: boolean; error?: string }> {
+    try {
+      const res = await fetch('/api/auth', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'forgotPassword', email })
+      })
+
+      const data = await res.json()
+
+      if (!res.ok) {
+        return { success: false, error: (data.error as string) || '发送失败' }
+      }
+
+      return { success: true }
+    } catch (e) {
+      return { success: false, error: '网络错误，请稍后重试' }
+    }
+  }
+
+  // ========== 重置密码 ==========
+  async function updatePassword(token: string, newPassword: string): Promise<{ success: boolean; error?: string }> {
+    try {
+      const res = await fetch('/api/auth', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'updatePassword', token, newPassword })
+      })
+
+      const data = await res.json()
+
+      if (!res.ok) {
+        return { success: false, error: (data.error as string) || '重置失败' }
+      }
+
+      return { success: true }
+    } catch (e) {
+      return { success: false, error: '网络错误，请稍后重试' }
+    }
+  }
+
   // ========== 模态框控制 ==========
   function openAuthModal(_mode: 'login' | 'register' = 'login') {
     // 模态框内部有登录/注册切换按钮，_mode 预留后续使用
@@ -199,6 +241,8 @@ export function useAuth() {
     login,
     register,
     logout,
+    forgotPassword,
+    updatePassword,
     openAuthModal,
     closeAuthModal,
     setUser,

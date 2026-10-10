@@ -39,7 +39,7 @@ export default async function handler(req: IncomingMessage, res: ServerResponse)
       return
     }
 
-    const { action, email, password, username } = body
+    const { action, email, password, username, token, newPassword } = body
 
     // ---- 初始化 Supabase Admin 客户端 ----
     let supabase
@@ -159,6 +159,73 @@ export default async function handler(req: IncomingMessage, res: ServerResponse)
       return
     }
 
+    // ========== 忘记密码 ==========
+    if (action === 'forgotPassword') {
+      if (!email) {
+        sendError(res, 400, '邮箱为必填项')
+        return
+      }
+
+      // 自动检测站点地址：优先用环境变量，否则从请求头推断
+      const proto = req.headers['x-forwarded-proto'] || 'https'
+      const host = req.headers['x-forwarded-host'] || req.headers.host || 'localhost:3000'
+      const siteUrl = process.env.SITE_URL || `${proto}://${host}`
+
+      const { error } = await supabase.auth.resetPasswordForEmail(email, {
+        redirectTo: `${siteUrl}/reset-password`
+      })
+
+      if (error) {
+        console.error('[auth] resetPasswordForEmail 失败:', error)
+      }
+
+      // 无论成功失败都返回成功，防止邮箱枚举攻击
+      res.setHeader('Content-Type', 'application/json')
+      res.end(JSON.stringify({ success: true, message: '如果该邮箱已注册，重置链接已发送到你的邮箱' }))
+      return
+    }
+
+    // ========== 更新密码 ==========
+    if (action === 'updatePassword') {
+      if (!token || !newPassword) {
+        sendError(res, 400, '缺少重置令牌或新密码')
+        return
+      }
+
+      if (newPassword.length < 6) {
+        sendError(res, 400, '密码长度不能少于6位')
+        return
+      }
+
+      // 用 reset token 换取 session
+      const { data: sessionData, error: sessionError } = await supabase.auth.verifyOtp({
+        token,
+        type: 'email'
+      })
+
+      if (sessionError || !sessionData?.session) {
+        console.error('[auth] verifyOtp 失败:', sessionError)
+        sendError(res, 400, '重置链接已过期或无效，请重新申请')
+        return
+      }
+
+      // 用 session 的 access token 更新密码
+      const { error: updateError } = await supabase.auth.admin.updateUserById(
+        sessionData.user.id,
+        { password: newPassword }
+      )
+
+      if (updateError) {
+        console.error('[auth] updateUserById 失败:', updateError)
+        sendError(res, 500, '密码更新失败，请稍后重试')
+        return
+      }
+
+      res.setHeader('Content-Type', 'application/json')
+      res.end(JSON.stringify({ success: true, message: '密码已重置成功' }))
+      return
+    }
+
     // ========== 登出 ==========
     if (action === 'logout') {
       const authHeader = req.headers.authorization
@@ -173,7 +240,7 @@ export default async function handler(req: IncomingMessage, res: ServerResponse)
     }
 
     // 未知 action
-    sendError(res, 400, '无效的 action，支持: register | login | logout')
+    sendError(res, 400, '无效的 action，支持: register | login | logout | forgotPassword | updatePassword')
   } catch (e: unknown) {
     const msg = e instanceof Error ? e.message : String(e)
     console.error('[auth] 未捕获异常:', msg)

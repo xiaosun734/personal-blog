@@ -13,14 +13,14 @@
             </button>
 
             <!-- 标题 -->
-            <h2 class="modal-title">{{ isLogin ? '欢迎回来' : '创建账号' }}</h2>
-            <p class="modal-subtitle">{{ isLogin ? '登录你的账号继续阅读' : '注册一个新账号开始你的博客之旅' }}</p>
+            <h2 class="modal-title">{{ isForgot ? '重置密码' : (isLogin ? '欢迎回来' : '创建账号') }}</h2>
+            <p class="modal-subtitle">{{ isForgot ? '输入注册邮箱，我们会发送重置链接给你' : (isLogin ? '登录你的账号继续阅读' : '注册一个新账号开始你的博客之旅') }}</p>
 
             <!-- 表单 -->
             <form class="auth-form" @submit.prevent="handleSubmit">
               <!-- 用户名（仅注册） -->
               <transition name="field-expand">
-                <div v-if="!isLogin" class="form-group">
+                <div v-if="!isLogin && !isForgot" class="form-group">
                   <label for="auth-username" class="form-label">用户名</label>
                   <input
                     id="auth-username"
@@ -53,7 +53,7 @@
               </div>
 
               <!-- 密码 -->
-              <div class="form-group">
+              <div v-if="!isForgot" class="form-group">
                 <label for="auth-password" class="form-label">密码</label>
                 <div class="password-wrapper">
                   <input
@@ -83,7 +83,7 @@
 
               <!-- 确认密码（仅注册） -->
               <transition name="field-expand">
-                <div v-if="!isLogin" class="form-group">
+                <div v-if="!isLogin && !isForgot" class="form-group">
                   <label for="auth-confirm-password" class="form-label">确认密码</label>
                   <input
                     id="auth-confirm-password"
@@ -100,7 +100,7 @@
               </transition>
 
               <!-- 记住我（仅登录） -->
-              <div v-if="isLogin" class="form-options">
+              <div v-if="isLogin && !isForgot" class="form-options">
                 <label class="checkbox-label">
                   <input v-model="form.rememberMe" type="checkbox" class="checkbox" />
                   <span class="checkbox-text">记住我</span>
@@ -111,26 +111,34 @@
               <!-- 服务端错误提示 -->
               <div v-if="serverError" class="server-error">{{ serverError }}</div>
 
+              <!-- 服务端成功提示 -->
+              <div v-if="serverSuccess" class="server-success">{{ serverSuccess }}</div>
+
               <!-- 提交按钮 -->
               <button type="submit" class="submit-btn" :disabled="submitting">
                 <span v-if="submitting" class="btn-spinner"></span>
-                <span v-else>{{ isLogin ? '登 录' : '注 册' }}</span>
+                <span v-else>{{ isForgot ? '发送重置链接' : (isLogin ? '登 录' : '注 册') }}</span>
               </button>
             </form>
 
             <!-- 切换登录/注册 -->
             <div class="switch-mode">
-              <span>{{ isLogin ? '还没有账号？' : '已有账号？' }}</span>
-              <button type="button" class="switch-btn" @click="toggleMode">
-                {{ isLogin ? '立即注册' : '去登录' }}
-              </button>
+              <template v-if="isForgot">
+                <button type="button" class="switch-btn" @click="backToLogin">← 返回登录</button>
+              </template>
+              <template v-else>
+                <span>{{ isLogin ? '还没有账号？' : '已有账号？' }}</span>
+                <button type="button" class="switch-btn" @click="toggleMode">
+                  {{ isLogin ? '立即注册' : '去登录' }}
+                </button>
+              </template>
             </div>
 
             <!-- 分割线+第三方登录（占位） -->
-            <div class="divider">
+            <div v-if="!isForgot" class="divider">
               <span class="divider-text">或</span>
             </div>
-            <div class="social-login">
+            <div v-if="!isForgot" class="social-login">
               <button type="button" class="social-btn github-btn" title="GitHub 登录（即将支持）" disabled>
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
                   <path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0 0 24 12c0-6.63-5.37-12-12-12z" />
@@ -158,13 +166,15 @@ const emit = defineEmits<{
   close: []
 }>()
 
-const { login, register } = useAuth()
+const { login, register, forgotPassword } = useAuth()
 
 // ========== State ==========
 const isLogin = ref(true)
+const isForgot = ref(false)
 const showPassword = ref(false)
 const submitting = ref(false)
 const serverError = ref('')
+const serverSuccess = ref('')
 
 interface FormData {
   username: string
@@ -212,11 +222,20 @@ function resetForm() {
   errors.password = ''
   errors.confirmPassword = ''
   serverError.value = ''
+  serverSuccess.value = ''
   submitting.value = false
 }
 
 function toggleMode() {
   isLogin.value = !isLogin.value
+  isForgot.value = false
+  resetForm()
+  showPassword.value = false
+}
+
+function backToLogin() {
+  isForgot.value = false
+  isLogin.value = true
   resetForm()
   showPassword.value = false
 }
@@ -229,7 +248,7 @@ function validate(): boolean {
   errors.confirmPassword = ''
 
   // 用户名（仅注册）
-  if (!isLogin.value && !form.username) {
+  if (!isLogin.value && !isForgot.value && !form.username) {
     errors.username = '请输入用户名'
     valid = false
   }
@@ -243,19 +262,21 @@ function validate(): boolean {
     valid = false
   }
 
-  // 密码
-  if (!form.password) {
-    errors.password = '请输入密码'
-    valid = false
-  } else if (form.password.length < 6) {
-    errors.password = '密码长度不能少于6位'
-    valid = false
-  }
+  // 密码（忘记密码时不需要）
+  if (!isForgot.value) {
+    if (!form.password) {
+      errors.password = '请输入密码'
+      valid = false
+    } else if (form.password.length < 6) {
+      errors.password = '密码长度不能少于6位'
+      valid = false
+    }
 
-  // 确认密码（仅注册）
-  if (!isLogin.value && form.password !== form.confirmPassword) {
-    errors.confirmPassword = '两次输入的密码不一致'
-    valid = false
+    // 确认密码（仅注册）
+    if (!isLogin.value && form.password !== form.confirmPassword) {
+      errors.confirmPassword = '两次输入的密码不一致'
+      valid = false
+    }
   }
 
   return valid
@@ -266,6 +287,20 @@ async function handleSubmit() {
 
   submitting.value = true
   serverError.value = ''
+  serverSuccess.value = ''
+
+  // 忘记密码模式
+  if (isForgot.value) {
+    const result = await forgotPassword(form.email)
+    if (result.success) {
+      serverSuccess.value = '重置链接已发送到你的邮箱，请查收（如果邮箱已注册的话）'
+      submitting.value = false
+    } else {
+      serverError.value = result.error || '发送失败，请稍后重试'
+      submitting.value = false
+    }
+    return
+  }
 
   let result: { success: boolean; error?: string }
 
@@ -284,7 +319,12 @@ async function handleSubmit() {
 }
 
 function handleForgotPassword() {
-  // 忘记密码（后续实现）
+  isForgot.value = true
+  serverError.value = ''
+  serverSuccess.value = ''
+  errors.username = ''
+  errors.password = ''
+  errors.confirmPassword = ''
 }
 
 // 弹窗关闭时延迟重置（等动画结束）
@@ -292,6 +332,7 @@ watch(() => props.visible, (val) => {
   if (!val) {
     setTimeout(() => {
       isLogin.value = true
+      isForgot.value = false
       resetForm()
       showPassword.value = false
     }, 300)
@@ -541,6 +582,16 @@ watch(() => props.visible, (val) => {
   color: #b91c1c;
   background: #fef2f2;
   border: 1px solid #fecaca;
+  line-height: 1.5;
+}
+
+.server-success {
+  padding: 10px 14px;
+  border-radius: 10px;
+  font-size: 0.84rem;
+  color: #15803d;
+  background: #f0fdf4;
+  border: 1px solid #bbf7d0;
   line-height: 1.5;
 }
 

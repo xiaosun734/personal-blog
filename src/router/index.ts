@@ -27,6 +27,11 @@ const routes: RouteRecordRaw[] = [
     path: '/personal',
     name: 'PersonalHomepage',
     component: () => import('@/views/personal-homepage.vue')
+  },
+  {
+    path: '/reset-password',
+    name: 'ResetPassword',
+    component: () => import('@/views/reset-password.vue')
   }
 ]
 
