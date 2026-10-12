@@ -1,6 +1,36 @@
 import { defineConfig } from 'vite'
 import vue from '@vitejs/plugin-vue'
 import { fileURLToPath, URL } from 'node:url'
+import { readdirSync } from 'node:fs'
+
+/**
+ * 扫描 api/ 目录生成路由表，模仿 Vercel 的"文件即路由"约定：
+ *   api/auth.ts → { '/auth': './api/auth.ts' }
+ * 不支持的写法（会被跳过）：下划线开头的辅助模块、.test. 测试文件、
+ * [id].ts 这类动态路由（Vercel 支持，本地静态表做不到）。
+ */
+function scanApiRoutes(): Record<string, string> {
+  const apiDir = fileURLToPath(new URL('./api', import.meta.url))
+  const routes: Record<string, string> = {}
+
+  let files: string[] = []
+  try {
+    files = readdirSync(apiDir)
+  } catch {
+    return routes // api/ 目录不存在时返回空表
+  }
+
+  for (const file of files) {
+    if (!file.endsWith('.ts') || file.endsWith('.d.ts')) continue // 只认 .ts
+    if (file.includes('.test.')) continue // 测试文件不是接口
+    if (file.startsWith('_')) continue // Vercel 约定：_ 开头不作为接口
+    if (file.includes('[')) continue // [id].ts 动态路由，本地不支持
+
+    routes['/' + file.replace(/\.ts$/, '')] = './api/' + file
+  }
+
+  return routes
+}
 
 /** 本地 API 插件：dev 模式下直接调用后端 handler，不再代理到 Vercel */
 function localApiPlugin() {
@@ -12,10 +42,8 @@ function localApiPlugin() {
           const { parse } = await import('node:url')
           const { pathname } = parse(req.url || '', true)
 
-          const ROUTES: Record<string, string> = {
-            '/articles': './api/articles.ts',
-            '/comments': './api/comments.ts',
-          }
+          // 每次请求重新扫描：新增 api/*.ts 后无需重启 dev server
+          const ROUTES = scanApiRoutes()
 
           const handlerPath = ROUTES[pathname || '']
           if (!handlerPath) {
